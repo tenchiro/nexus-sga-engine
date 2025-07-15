@@ -27,15 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     function init() {
+        // This is the very first function that runs. It ONLY sets up the first button.
         document.getElementById('agree-btn').addEventListener('click', loadAppDataAndShowInstructions);
     }
 
     async function loadAppDataAndShowInstructions() {
         const getStartedBtn = document.getElementById('start-semester-btn');
         
+        // Immediately transition the UI so the user sees something happen.
         consentScreen.classList.add('hidden');
         instructionsScreen.classList.remove('hidden');
 
+        // Now, fetch the core data in the background.
         try {
             getStartedBtn.textContent = "Loading...";
             getStartedBtn.disabled = true;
@@ -57,12 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("Essential app data is missing from the server's response.");
             }
             
+            // Once data is loaded, prepare the *next* screens and attach their listeners.
             populateStates();
             getStartedBtn.addEventListener('click', showLoginScreen);
             document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
             document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
             document.getElementById('close-modal-btn').addEventListener('click', () => { location.reload(); });
             
+            // Re-enable the button.
             getStartedBtn.textContent = "Start Semester";
             getStartedBtn.disabled = false;
 
@@ -72,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`Could not load essential game data. Please contact the administrator.\n\nError: ${error.message}`);
         }
     }
-
 
     function populateStates() {
         const stateSelect = document.getElementById('player-state');
@@ -110,7 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateScoreDisplay();
         
         await fetchEvent(1);
-        renderLifeEvent(prefetchedEvent);
+        if (prefetchedEvent) {
+            renderLifeEvent(prefetchedEvent);
+        }
     }
 
     async function resumeGame() {
@@ -321,11 +327,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showFinalSplash() {
-        // ... (This function is the same as the previous version)
+        let splashHTML = '';
+        const finalGate = appData.gates[20];
+        const success = finalGate && gameState.profileStrength >= finalGate.requiredScore;
+
+        if (success) {
+            splashHTML = `<h2>BREAKING NEWS: Nexus Whistleblower Exposes All</h2><p>Documents confirm Nexus intentionally amplifies divisive content to maximize user engagement. Your journey has shown you the truth. You saw the signals everyone else missed.</p><p style="text-align:center; margin-top: 20px; color: var(--green-accent);"><strong>CONGRATULATIONS! You have completed Level 0.</strong></p>`;
+        } else {
+             splashHTML = `<h2>NEWS REPORT: Nexus Stock Hits All-Time High</h2><p>Analysts credit the company's highly sophisticated algorithm for its ability to keep users on the platform longer than any competitor. The system works as intended. The Protocol remains unchallenged.</p><p style="text-align:center; margin-top: 20px; color: var(--red-accent);"><strong>LEVEL FAILED. TRY AGAIN.</strong></p>`;
+        }
+        
+        splashHTML += `<hr style="border-color: var(--tertiary-bg); margin: 20px 0;">
+                       <div id="end-game-buttons">
+                           <button id="submit-data-btn" class="modal-button">Finish & Submit Data</button>
+                           <button id="home-button" class="modal-button hidden">Return to Home</button>
+                       </div>`;
+        
+        endGameSplashEl.querySelector('.modal-content').innerHTML = splashHTML;
+        endGameSplashEl.classList.remove('hidden');
+        
+        document.getElementById('submit-data-btn').onclick = () => {
+            const submitButton = document.getElementById('submit-data-btn');
+            submitButton.textContent = "Submitting...";
+            submitButton.disabled = true;
+
+            fetch('submit_data.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gameState.informationTrail)
+            })
+            .then(response => { if (!response.ok) { throw new Error('Network response was not ok'); } return response.json(); })
+            .then(data => {
+                console.log('Success:', data);
+                if(data.status === 'success') {
+                    submitButton.textContent = "Data Submitted!";
+                } else {
+                    submitButton.textContent = "Submission Failed";
+                    alert("Server Error: " + data.message);
+                }
+                document.getElementById('home-button').classList.remove('hidden');
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                submitButton.textContent = "Submission Failed";
+                alert("A network error occurred. Could not submit data. Please check the console.");
+                document.getElementById('home-button').classList.remove('hidden'); 
+            });
+        };
+
+        document.getElementById('home-button').onclick = () => { location.reload(); };
     }
 
     function logAction(event, choice, score) {
-        // ... (This function is the same as the previous version)
+        gameState.informationTrail.push({
+            timestamp: new Date().toISOString(), playerID: gameState.playerID, sessionID: gameState.sessionID,
+            eventWeek: event.week || event.week_number, 
+            eventID: event.event_id || event.gate_id, 
+            choiceText: choice ? choice.choice_text : (score > 0 ? "Chose positive response" : "Chose negative response"),
+            choiceScore: score, currentProfileStrength: gameState.profileStrength,
+        });
     }
 
     function updateScoreDisplay() {
@@ -333,10 +393,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showLoadingIndicator(show) {
-        // ... (This function is the same as the previous version)
+        let indicator = document.getElementById('loading-indicator');
+        if (show) {
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'loading-indicator';
+                gameFooter.appendChild(indicator);
+            }
+            indicator.classList.remove('hidden');
+        } else {
+            if (indicator) {
+                indicator.classList.add('hidden');
+            }
+        }
     }
 
     // --- SCRIPT INITIALIZATION ---
-    init();
-
-}); // End of DOMContentLoaded wrapper
+    init(); // This now correctly calls the init() function.
+});
