@@ -5,17 +5,31 @@ const { MongoClient } = require('mongodb');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
-// --- IMPORTANT: Database Connection ---
-const uri = process.env.MONGO_URI; // Render will provide this value
+// Configure Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Allow all origins for simplicity in beta
+    methods: ["GET", "POST"]
+  }
+});
+
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
+
+// --- Database Connection ---
+const uri = process.env.MONGO_URI; 
+if (!uri) {
+    console.error("FATAL ERROR: MONGO_URI environment variable not set.");
+    process.exit(1);
+}
 const client = new MongoClient(uri);
 
 let db;
 async function connectToDB() {
     try {
         await client.connect();
-        db = client.db("nexus_analytics_db"); // You can name your database anything
+        db = client.db("nexus_analytics_db");
         console.log("Successfully connected to MongoDB Atlas.");
     } catch (err) {
         console.error("Failed to connect to MongoDB", err);
@@ -25,9 +39,7 @@ async function connectToDB() {
 
 connectToDB();
 
-// Serve static files from a 'public' directory
-app.use(express.static('public'));
-
+// --- WebSocket Logic ---
 io.on('connection', (socket) => {
     console.log('A client connected:', socket.id);
 
@@ -38,14 +50,12 @@ io.on('connection', (socket) => {
             return;
         }
         
-        // 1. Archive the event to the database
+        // Archive the event to the 'events' collection in our database
         db.collection('events').insertOne(eventData)
-            .catch(err => console.error("Failed to insert event into DB", err));
+            .catch(err => console.error("Failed to insert event into DB:", err));
         
-        // 2. Broadcast the event to any connected dashboards (for future use)
-        // For now, we just log it.
-        // io.to('dashboard_room').emit('live_event', eventData);
-        console.log('Received event:', eventData);
+        // Log for debugging
+        console.log(`Received event from ${eventData.playerID}:`, eventData.eventID);
     });
 
     socket.on('disconnect', () => {
