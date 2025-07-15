@@ -34,11 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadAppDataAndShowInstructions() {
         const getStartedBtn = document.getElementById('start-semester-btn');
         
-        // Immediately transition the UI so the user sees something happen.
         consentScreen.classList.add('hidden');
         instructionsScreen.classList.remove('hidden');
 
-        // Now, fetch the core data in the background.
         try {
             getStartedBtn.textContent = "Loading...";
             getStartedBtn.disabled = true;
@@ -60,14 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error("Essential app data is missing from the server's response.");
             }
             
-            // Once data is loaded, prepare the *next* screens and attach their listeners.
             populateStates();
             getStartedBtn.addEventListener('click', showLoginScreen);
             document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
             document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
             document.getElementById('close-modal-btn').addEventListener('click', () => { location.reload(); });
             
-            // Re-enable the button.
             getStartedBtn.textContent = "Start Semester";
             getStartedBtn.disabled = false;
 
@@ -114,9 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateScoreDisplay();
         
         await fetchEvent(1);
-        if (prefetchedEvent) {
-            renderLifeEvent(prefetchedEvent);
-        }
+        renderLifeEvent(prefetchedEvent);
     }
 
     async function resumeGame() {
@@ -409,5 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- SCRIPT INITIALIZATION ---
-    init(); // This now correctly calls the init() function.
-});
+    // This now correctly calls the init() function.
+    init();
+
+}); // End of DOMContentLoaded wrapper
