@@ -9,35 +9,16 @@
 <body>
 
     <div id="game-container">
-        <!-- SCREEN 1: CONSENT (Starts Visible) -->
-        <div id="consent-screen" class="full-screen-view consent-view">
-            <h1>Research Consent</h1>
-            <p class="instructions-text">
-                This is a research game designed to study decision-making in social media environments. You will take on the role of a college student navigating their first semester.<br><br>
-                By clicking "I Agree" and playing the game, you consent to have your anonymized gameplay choices collected and used for academic research purposes. No personally identifiable information will be stored.
-            </p>
-            <button id="agree-btn" class="action-button">I Agree and Wish to Participate</button>
+        <!-- SCREEN 1 & 2 ARE NOW HIDDEN BY DEFAULT -->
+        <div id="consent-screen" class="full-screen-view consent-view hidden">
+            <!-- Content remains for future use -->
         </div>
-
-        <!-- SCREEN 2: INSTRUCTIONS (Starts Hidden) -->
         <div id="instructions-screen" class="full-screen-view hidden">
-            <h1>Welcome to<br>Nexus</h1>
-            <p class="instructions-text">
-                Get ready to live your first semester of college on Nexus, the world's most connected social app. The vibe is simple: <span class="highlight">just be you.</span><br><br>
-                Each week, a new Life Event will pop up. Your feed, your choice—pick the post that feels right. There are no wrong answers, only your story.<br>
-            </p>
-            <div class="instruction-box">
-                <p>At key moments, a button that looks like this:</p>
-                <div class="button-example">
-                    <button class="save-progress-button" disabled>Take a Break</button>
-                </div>
-                <p>will allow you to save your progress and return later. A unique Passkey is your only ticket back, so write it down!</p>
-            </div>
-            <button id="start-semester-btn" class="action-button">Start Semester</button>
+            <!-- Content remains for future use -->
         </div>
         
-        <!-- SCREEN 3: LOGIN / RESUME (Starts Hidden) -->
-        <div id="login-screen" class="full-screen-view hidden">
+        <!-- SCREEN 3: LOGIN / RESUME (STARTS VISIBLE) -->
+        <div id="login-screen" class="full-screen-view">
             <h1>Nexus</h1>
             <div id="new-player-form">
                 <div class="form-group">
@@ -109,7 +90,6 @@
              <div class="modal-content final-splash"></div>
         </div>
     </div>
-    <!-- This script is served automatically by the Socket.IO server -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
