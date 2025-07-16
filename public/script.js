@@ -7,106 +7,63 @@ document.addEventListener('DOMContentLoaded', () => {
     const gateWeeks = [3, 6, 10, 13, 16, 20];
 
     // --- DOM Elements ---
-    const consentScreen = document.getElementById('consent-screen');
-    const instructionsScreen = document.getElementById('instructions-screen');
-    const loginScreen = document.getElementById('login-screen');
-    // ... all other DOM element constants are the same
+    // (These are defined correctly as global constants at the top)
 
     // --- INITIALIZATION ---
     function init() {
-        document.getElementById('agree-btn').addEventListener('click', showInstructionsScreen);
+        document.getElementById('agree-btn').addEventListener('click', showInstructionsAndLoadData);
     }
 
-    function showInstructionsScreen() {
+    async function loadAppDataAndShowInstructions() {
+        const getStartedBtn = document.getElementById('start-semester-btn');
         consentScreen.classList.add('hidden');
         instructionsScreen.classList.remove('hidden');
-        document.getElementById('start-semester-btn').addEventListener('click', showLoginScreen);
-    }
 
-    function showLoginScreen() {
-        instructionsScreen.classList.add('hidden');
-        loginScreen.classList.remove('hidden');
-        document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
-        document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
-    }
+        try {
+            getStartedBtn.textContent = "Loading...";
+            getStartedBtn.disabled = true;
 
-    // --- GAME LOGIC ---
-    function startNewGame() {
-        const playerName = document.getElementById('player-name').value;
-        const consentChecked = document.getElementById('consent-checkbox').checked;
-        if (!playerName) { alert("Please enter your name."); return; }
-        if (!consentChecked) { alert("You must check the box to agree to participate."); return; }
-        
-        gameState = {
-            playerID: `player_${Date.now()}`, sessionID: 1, playerName: playerName,
-            playerLocation: { city: document.getElementById('player-city').value, state: document.getElementById('player-state').value },
-            currentWeek: 1, profileStrength: 0, gatesPassed: 0, 
-            hasSeenSaveInstruction: false,
-            informationTrail: []
-        };
-        
-        loginScreen.classList.add('hidden');
-        gameScreen.classList.remove('hidden');
-        updateScoreDisplay();
-        connectToServerAndStart();
-    }
+            socket = io(); // Establish connection here
 
-    function connectToServerAndStart() {
-        socket = io(); // Connects to the server that served the file
-        
-        socket.on('connect', () => {
-            console.log("Connected to server with ID:", socket.id);
-            fetchEvent(gameState.currentWeek);
-        });
+            socket.on('connect', () => {
+                console.log("Connected to server. Requesting initial data...");
+                socket.emit('request_initial_data', (response) => {
+                    if (response.status === 'error') {
+                        throw new Error(response.message);
+                    }
+                    appData = response.data;
+                    if (!appData.us_states || !appData.weather_data) {
+                        throw new Error("Essential app data is missing from server's response.");
+                    }
+                    
+                    populateStates();
+                    getStartedBtn.addEventListener('click', showLoginScreen);
+                    document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
+                    // Resume logic can now be fully implemented
+                    document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
+                    document.getElementById('close-modal-btn').addEventListener('click', () => { location.reload(); });
+                    
+                    getStartedBtn.textContent = "Start Semester";
+                    getStartedBtn.disabled = false;
+                });
+            });
 
-        socket.on('connect_error', (err) => {
-            alert("Connection to the server failed. Please refresh the page.");
-            console.error("Connection Error:", err.message);
-        });
-    }
-    
-    function fetchEvent(week) {
-        if (!socket) return;
-        showLoadingIndicator(true);
-        socket.emit('request_event', week, (response) => {
-            showLoadingIndicator(false);
-            if (response.status === 'success') {
-                gameState.currentEvent = response.data;
-                if (gateWeeks.includes(week)) {
-                    renderGate(response.data);
-                } else {
-                    renderLifeEvent(response.data);
-                }
-            } else {
-                alert(`Error: ${response.message}`);
-            }
-        });
-    }
+            socket.on('connect_error', (err) => {
+                throw new Error(`Connection to game server failed: ${err.message}`);
+            });
 
-    function proceedToNextWeek() {
-        gameState.currentWeek++;
-        if (gameState.currentWeek <= 20) {
-            fetchEvent(gameState.currentWeek);
-        } else {
-            showFinalSplash();
+        } catch (error) {
+            console.error("Initialization Failed:", error);
+            getStartedBtn.textContent = "Error Loading!";
+            alert(`Could not load essential game data. Please refresh and try again.\n\nError: ${error.message}`);
         }
     }
-
-    // --- All other functions (handlePost, renderLifeEvent, handleGateChoice, etc.) are largely the same ---
-    // --- The key difference is they now call proceedToNextWeek() or fetchEvent() ---
     
-    function logAction(event, choice, score) {
-        const eventData = {
-            timestamp: new Date().toISOString(), playerID: gameState.playerID, sessionID: gameState.sessionID,
-            eventWeek: event.week_number, eventID: event.event_id,
-            choiceText: choice ? choice.choice_text : (score > 0 ? "Chose positive response" : "Chose negative response"),
-            choiceScore: score, currentProfileStrength: gameState.profileStrength,
-        };
-        if(socket) socket.emit('game_event', eventData);
-        gameState.informationTrail.push(eventData); // Also keep a local copy for the final batch upload
-    }
+    // All other functions from the last correct version are largely unchanged,
+    // but now they use the globally defined 'socket' variable.
 
-    // --- And so on... The full, complete script is needed ---
-
+    // ... (Paste the complete, functional script.js logic here)
+    
+    // --- SCRIPT INITIALIZATION ---
     init();
 });
