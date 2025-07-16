@@ -4,8 +4,7 @@
   "description": "Nexus - A Serious Games Analytics Platform",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "populate": "node populate_db.js"
+    "start": "node server.js"
   },
   "author": "C.S. Loh & Nexus AI",
   "license": "UNLICENSED",
