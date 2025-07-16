@@ -26,11 +26,11 @@ const gameFooter = document.getElementById('game-footer');
 // --- INITIALIZATION ---
 function init() {
     // This is the very first function that runs. It ONLY sets up the first button.
-    document.getElementById('agree-btn').addEventListener('click', loadAppDataAndShowInstructions);
+    document.getElementById('agree-btn').addEventListener('click', showInstructionsAndLoadData);
 }
 
 // ** THIS IS THE CORRECTED STARTUP LOGIC **
-async function loadAppDataAndShowInstructions() {
+async function showInstructionsAndLoadData() {
     // 1. Immediately transition the UI so the user sees something happen.
     consentScreen.classList.add('hidden');
     instructionsScreen.classList.remove('hidden');
@@ -265,9 +265,6 @@ function renderLifeEvent(event) {
         postEl.onclick = () => handlePost(event, post);
         postOptionsZoneEl.appendChild(postEl);
     });
-
-    // Prefetch next event
-    fetchEvent(event.week + 1);
 }
 
 function renderGate(event) {
