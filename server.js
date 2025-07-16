@@ -186,3 +186,4 @@ async function seedDatabase() {
         console.error("Error during database population:", e);
     }
 }
+}
