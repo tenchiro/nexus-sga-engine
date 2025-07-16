@@ -106,7 +106,7 @@ async function startNewGame() {
     updateScoreDisplay();
     
     await fetchEvent(1);
-    if(prefetchedEvent) renderLifeEvent(prefetchedEvent);
+    renderLifeEvent(prefetchedEvent);
 }
 
 async function resumeGame() {
@@ -318,7 +318,7 @@ function handleGateChoice(event, score) {
 }
 
 function showFinalSplash() {
-    uploadSessionData(true); // Final upload
+    uploadSessionData(); // Final data sync
     let splashHTML = '';
     const finalGate = appData.gates[20];
     const success = finalGate && gameState.profileStrength >= finalGate.requiredScore;
@@ -342,7 +342,9 @@ function showFinalSplash() {
 
 function uploadSessionData() {
     if (!gameState || !gameState.playerID) return;
-    socket.emit('live_event_stream', gameState.informationTrail);
+    // This sends the entire gameState object to be upserted.
+    // The server handles inserting or updating the record.
+    navigator.sendBeacon('update_session.php', JSON.stringify(gameState));
 }
 
 function logAction(event, choice, score) {
