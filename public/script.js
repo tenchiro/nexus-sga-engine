@@ -6,8 +6,6 @@ const gateWeeks = [3, 6, 10, 13, 16, 20];
 const socket = io();
 
 // --- DOM Elements ---
-const consentScreen = document.getElementById('consent-screen');
-const instructionsScreen = document.getElementById('instructions-screen');
 const loginScreen = document.getElementById('login-screen');
 const gameScreen = document.getElementById('game-screen');
 const scoreValueEl = document.getElementById('score-value');
@@ -24,25 +22,17 @@ const passkeyDisplayEl = document.getElementById('passkey-display');
 const gameFooter = document.getElementById('game-footer');
 
 // --- INITIALIZATION ---
-function init() {
-    // This is the very first function that runs. It ONLY sets up the first button.
-    document.getElementById('agree-btn').addEventListener('click', showInstructionsAndLoadData);
-}
-
-// ** THIS IS THE CORRECTED STARTUP LOGIC **
-async function showInstructionsAndLoadData() {
-    // 1. Immediately transition the UI so the user sees something happen.
-    consentScreen.classList.add('hidden');
-    instructionsScreen.classList.remove('hidden');
-
-    // 2. NOW that the screen is visible, we can safely get the button element.
-    const getStartedBtn = document.getElementById('start-semester-btn');
+// This new init function starts immediately and loads data for the Login screen.
+async function initApp() {
+    const startButton = document.getElementById('start-new-game-btn');
+    const resumeButton = document.getElementById('resume-game-btn');
     
-    // 3. Fetch the core data in the background.
-    try {
-        getStartedBtn.textContent = "Loading...";
-        getStartedBtn.disabled = true;
+    // Disable buttons until data is loaded
+    startButton.disabled = true;
+    startButton.textContent = "Loading...";
+    resumeButton.disabled = true;
 
+    try {
         const response = await new Promise((resolve, reject) => {
             socket.emit('get_app_data', (response) => {
                 if (response.status === 'success') {
@@ -59,21 +49,22 @@ async function showInstructionsAndLoadData() {
             throw new Error("Essential app data is missing from the server's response.");
         }
         
-        // 4. Once data is loaded, prepare the *next* screens and attach their listeners.
         populateStates();
-        getStartedBtn.addEventListener('click', showLoginScreen);
-        document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
-        document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
+        
+        // Attach event listeners now that data is loaded
+        startButton.addEventListener('click', startNewGame);
+        resumeButton.addEventListener('click', resumeGame);
         document.getElementById('close-modal-btn').addEventListener('click', () => { location.reload(); });
         
-        // 5. Re-enable the button.
-        getStartedBtn.textContent = "Start Semester";
-        getStartedBtn.disabled = false;
+        // Re-enable buttons
+        startButton.disabled = false;
+        startButton.textContent = "Begin First Semester";
+        resumeButton.disabled = false;
 
     } catch (error) {
         console.error("Initialization Failed:", error);
-        getStartedBtn.textContent = "Error Loading!";
-        alert(`Could not load essential game data. Please contact the administrator.\n\nError: ${error.message}`);
+        startButton.textContent = "Error Loading!";
+        alert(`Could not load essential game data. Please check server logs.\n\nError: ${error.message}`);
     }
 }
 
@@ -88,12 +79,7 @@ function populateStates() {
     stateSelect.value = 'IN'; 
 }
 
-function showLoginScreen() {
-    instructionsScreen.classList.add('hidden');
-    loginScreen.classList.remove('hidden');
-}
-
-// --- GAME LOGIC ---
+// --- GAME LOGIC (Unchanged from here down) ---
 async function startNewGame() {
     const playerName = document.getElementById('player-name').value;
     const consentChecked = document.getElementById('consent-checkbox').checked;
