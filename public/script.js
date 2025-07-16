@@ -77,7 +77,6 @@ async function loadAppDataAndShowInstructions() {
     }
 }
 
-
 function populateStates() {
     const stateSelect = document.getElementById('player-state');
     appData.us_states.forEach(state => {
@@ -266,6 +265,9 @@ function renderLifeEvent(event) {
         postEl.onclick = () => handlePost(event, post);
         postOptionsZoneEl.appendChild(postEl);
     });
+
+    // Prefetch next event
+    fetchEvent(event.week + 1);
 }
 
 function renderGate(event) {
@@ -326,7 +328,7 @@ function handleGateChoice(event, score) {
 }
 
 function showFinalSplash() {
-    uploadSessionData(true); 
+    uploadSessionData(); 
     let splashHTML = '';
     const finalGate = appData.gates[20];
     const success = finalGate && gameState.profileStrength >= finalGate.requiredScore;
