@@ -1,17 +1,18 @@
 {
-  "name": "nexus-sga-server",
+  "name": "sga-core-engine",
   "version": "1.0.0",
-  "description": "Real-time server for the Nexus game and SGA Core Engine.",
+  "description": "Nexus - A Serious Games Analytics Platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "populate": "node populate_db.js"
   },
-  "author": "Professor C.S. Loh & Nexus AI",
+  "author": "C.S. Loh & Nexus AI",
   "license": "UNLICENSED",
   "dependencies": {
-    "express": "^4.18.2",
-    "mongodb": "^5.7.0",
-    "socket.io": "^4.7.2"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongodb": "^6.5.0",
+    "socket.io": "^4.7.5"
   }
 }

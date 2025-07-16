@@ -1,135 +1,132 @@
+// --- SGA Core Engine - Real-Time Server ---
+// Load environment variables from a .env file
+require('dotenv').config(); 
+
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const { MongoClient } = require('mongodb');
-const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*", // Allow all origins for simplicity in beta
-    methods: ["GET", "POST"]
-  }
-});
+const io = new Server(server);
 
-// --- Database Connection ---
-const uri = process.env.MONGO_URI; 
+// --- Database Configuration ---
+const uri = process.env.MONGODB_URI;
 if (!uri) {
-    console.error("FATAL ERROR: MONGO_URI environment variable not set.");
+    console.error("FATAL ERROR: MONGODB_URI is not defined. Please check your .env file.");
     process.exit(1);
 }
 const client = new MongoClient(uri);
+const DB_NAME = 'nexus-sga-db';
 
-let db;
-async function connectToDB() {
+let db; 
+
+async function connectToDb() {
     try {
         await client.connect();
-        db = client.db("nexus_analytics_db"); // You can name your database anything
-        console.log("Successfully connected to MongoDB Atlas.");
-    } catch (err) {
-        console.error("Failed to connect to MongoDB", err);
+        db = client.db(DB_NAME);
+        console.log("Successfully connected to MongoDB.");
+    } catch (e) {
+        console.error("Could not connect to MongoDB", e);
         process.exit(1);
     }
 }
 
-connectToDB();
+// --- Serve Static Files from 'public' directory ---
+app.use(express.static('public'));
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// --- WebSocket Logic ---
+// --- WebSocket Connection Logic ---
 io.on('connection', (socket) => {
-    console.log('A client connected:', socket.id);
+    console.log(`Client connected: ${socket.id}`);
 
-    // Listen for initial data request from client
-    socket.on('request_initial_data', async (callback) => {
+    socket.on('get_app_data', async (callback) => {
         try {
-            const staticDataCursor = db.collection('static_data').find({});
-            const app_data = {};
-            await staticDataCursor.forEach(doc => {
-                app_data[doc.data_key] = doc.data_value;
-            });
-            app_data.gates = { 3: { requiredScore: 2 }, 6: { requiredScore: 4 }, 10: { requiredScore: 7 }, 13: { requiredScore: 10 }, 16: { requiredScore: 13 }, 20: { requiredScore: 16 } };
-            callback({ status: 'success', data: app_data });
+            const staticDataCollection = db.collection('static_data');
+            const dataCursor = await staticDataCollection.find({});
+            const appData = {};
+            for await (const doc of dataCursor) {
+                appData[doc.data_key] = doc.data_value;
+            }
+            callback({ status: 'success', data: appData });
         } catch (e) {
-            console.error("Error fetching initial data:", e);
-            callback({ status: 'error', message: 'Could not fetch initial data from DB.' });
+            console.error('Error fetching app data:', e);
+            callback({ status: 'error', message: 'Could not load app data from database.' });
         }
     });
 
-    socket.on('request_event', async ({ week, isGate }, callback) => {
-        const collectionName = isGate ? 'gate_events' : 'life_events';
+    socket.on('get_event', async (week, callback) => {
         try {
-            const cursor = db.collection(collectionName).aggregate([{ $match: { week_number: week } }, { $sample: { size: 1 } }]);
-            const event = await cursor.next();
+            const eventsCollection = db.collection('life_events');
+            const eventCursor = await eventsCollection.aggregate([
+                { $match: { week_number: week } },
+                { $sample: { size: 1 } }
+            ]);
+            const event = await eventCursor.next();
 
-            if (event && collectionName === 'life_events') {
-                const choicesCursor = db.collection('event_choices').find({ event_id: event.event_id });
-                event.posts = await choicesCursor.toArray();
-            }
-            
             if (event) {
+                const choicesCollection = db.collection('event_choices');
+                const choicesCursor = await choicesCollection.find({ event_id: event.event_id });
+                event.posts = await choicesCursor.toArray();
                 callback({ status: 'success', data: event });
             } else {
-                callback({ status: 'error', message: `No event found for week ${week}` });
+                 callback({ status: 'error', message: `No event found for week ${week}` });
             }
         } catch (e) {
-            console.error(`Error fetching event for week ${week}:`, e);
-            callback({ status: 'error', message: `DB error for week ${week}` });
+             console.error(`Error fetching event for week ${week}:`, e);
+             callback({ status: 'error', message: 'Database error while fetching event.' });
         }
     });
-
-    socket.on('submit_analytics', (data) => {
-        if (!db) return;
-        db.collection('nexus_game_sessions').insertOne(data).catch(err => console.error("Failed to insert session data:", err));
-    });
-
-    socket.on('save_game_state', async (gameState, callback) => {
-        if (!db) return callback({ status: 'error', message: 'Database not connected.' });
+    
+    socket.on('get_gate_event', async (week, callback) => {
         try {
-            const token = require('crypto').randomBytes(4).toString('hex');
-            const player_ip = socket.handshake.address;
+            const gatesCollection = db.collection('gate_events');
+            const gateCursor = await gatesCollection.aggregate([
+                { $match: { week_number: week } },
+                { $sample: { size: 1 } }
+            ]);
+            const gateEvent = await gateCursor.next();
 
-            await db.collection('saved_sessions').insertOne({
-                token: token,
-                session_data: gameState,
-                player_ip: player_ip,
-                save_time: new Date()
-            });
-            callback({ status: 'success', token: token });
-        } catch(e) {
-            console.error("Save game error:", e);
-            callback({ status: 'error', message: 'Failed to save session.' });
-        }
-    });
-
-    socket.on('resume_game_state', async (token, callback) => {
-        if (!db) return callback({ status: 'error', message: 'Database not connected.' });
-        try {
-            const player_ip = socket.handshake.address;
-            const savedGame = await db.collection('saved_sessions').findOneAndDelete({
-                token: token,
-                player_ip: player_ip
-            });
-
-            if (savedGame) {
-                callback({ status: 'success', data: savedGame.session_data });
+            if(gateEvent) {
+                callback({ status: 'success', data: gateEvent });
             } else {
-                callback({ status: 'error', message: 'Invalid or expired token.' });
+                callback({ status: 'error', message: `No gate event found for week ${week}` });
             }
-        } catch(e) {
-            console.error("Resume game error:", e);
-            callback({ status: 'error', message: 'Failed to resume session.' });
+        } catch (e) {
+             console.error(`Error fetching gate event for week ${week}:`, e);
+             callback({ status: 'error', message: 'Database error while fetching gate event.' });
+        }
+    });
+    
+    socket.on('live_event_stream', async (eventData) => {
+        try {
+            const sessionsCollection = db.collection('live_sessions');
+            await sessionsCollection.updateOne(
+                { playerID: eventData.playerID, sessionID: eventData.sessionID },
+                { 
+                    $push: { informationTrail: eventData.eventLog },
+                    $set: { 
+                        playerName: eventData.playerName,
+                        lastUpdated: new Date()
+                    }
+                },
+                { upsert: true }
+            );
+        } catch (e) {
+            console.error('Error logging live event:', e);
         }
     });
 
     socket.on('disconnect', () => {
-        console.log('A client disconnected:', socket.id);
+        console.log(`Client disconnected: ${socket.id}`);
     });
 });
 
+
+// --- Start Server ---
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+connectToDb().then(() => {
+    server.listen(PORT, () => {
+        console.log(`SGA Core Engine server running on port ${PORT}`);
+    });
 });
