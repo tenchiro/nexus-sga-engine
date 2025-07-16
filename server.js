@@ -44,7 +44,10 @@ io.on('connection', (socket) => {
             const dataCursor = await staticDataCollection.find({});
             const appData = {};
             for await (const doc of dataCursor) {
-                appData[doc.data_key] = doc.data_value;
+                // We don't want to send the version key to the client
+                if(doc.data_key !== 'db_version') {
+                    appData[doc.data_key] = doc.data_value;
+                }
             }
             callback({ status: 'success', data: appData });
         } catch (e) {
@@ -127,17 +130,24 @@ connectToDb().then(() => {
     });
 });
 
+// --- NEW, ROBUST DATABASE SEEDING FUNCTION ---
 async function seedDatabase() {
     try {
-        const lifeEventsCollection = db.collection('life_events');
-        const count = await lifeEventsCollection.countDocuments();
+        const versionCollection = db.collection('static_data');
+        const dbVersion = await versionCollection.findOne({ data_key: 'db_version' });
 
-        if (count > 0) {
-            console.log('Database already populated. Skipping seed.');
+        if (dbVersion && dbVersion.version === 1) {
+            console.log('Database is already populated and at the correct version. Skipping seed.');
             return;
         }
 
-        console.log('First run detected. Populating database with initial content...');
+        console.log('Database is empty or outdated. Populating with initial content...');
+
+        // Drop existing collections to ensure a clean slate
+        await db.collection('life_events').drop().catch(e => console.log("life_events collection didn't exist, continuing..."));
+        await db.collection('event_choices').drop().catch(e => console.log("event_choices collection didn't exist, continuing..."));
+        await db.collection('gate_events').drop().catch(e => console.log("gate_events collection didn't exist, continuing..."));
+        await db.collection('static_data').drop().catch(e => console.log("static_data collection didn't exist, continuing..."));
 
         const lifeEventsData = [
             { event_id: 1, week_number: 1, event_code: 'MOVE_IN_DAY', event_text: 'First day on campus! Your dorm room is small but it\'s all yours. Your roommate, Leo, seems okay, but snores loudly.' }, { event_id: 2, week_number: 1, event_code: 'PARENTS_LEAVING', event_text: 'Your parents just helped you move in. They\'re giving you one last hug before they drive off, and you can tell your Mom is trying not to cry.'}, { event_id: 3, week_number: 1, event_code: 'FIRST_DORM_MEETING', event_text: 'It\'s your first mandatory dorm floor meeting. The RA is going over rules and trying to get everyone to do an awkward icebreaker.'},
@@ -180,19 +190,20 @@ async function seedDatabase() {
             { gate_id: 13, week_number: 16, event_code: 'GATE_ANGER_SELLS', sender_from: 'Dad', sender_text: 'Alex, your uncle was ranting about this at Thanksgiving and I thought he was crazy, but then I found this article. He might be onto something.', positive_response: 'I hate to admit it, but my uncle might have a point this time.', negative_response: 'My uncle is a conspiracy theorist. Ignore.', leak_title: 'Internal A/B Tests Confirm: Anger Sells', leak_content: 'A series of A/B tests on the Nexus platform confirms that showing users content that makes them angry results in a 400% increase in session duration compared to neutral or positive content.', puff_content: 'Nexus continues to dominate the market in user engagement metrics, with users spending more time on the platform than any competitor, creating a vibrant online ecosystem.' }, { gate_id: 14, week_number: 16, event_code: 'GATE_SESSION_DURATION', sender_from: 'Maria', sender_text: 'Found an insane article in my media class. It says social media companies WANT you to get in fights online because you stay logged in longer.', positive_response: 'That is cynical and I absolutely believe it. Reading now.', negative_response: 'That seems a little extreme. I doubt it\'s true.', leak_title: 'Internal A/B Tests Confirm: Anger Sells', leak_content: 'A series of A/B tests on the Nexus platform confirms that showing users content that makes them angry results in a 400% increase in session duration compared to neutral or positive content.', puff_content: 'Nexus continues to dominate the market in user engagement metrics, with users spending more time on the platform than any competitor, creating a vibrant online ecosystem.' }, { gate_id: 15, week_number: 16, event_code: 'GATE_EMOTIONAL_HOOKS', sender_from: 'Mom', sender_text: 'I read an article about how these apps are designed to be like slot machines, keeping you hooked with emotional highs and lows.', positive_response: 'That explains a lot, actually. Let me read that.', negative_response: 'I think I have more self-control than that.', leak_title: 'Internal A/B Tests Confirm: Anger Sells', leak_content: 'A series of A/B tests on the Nexus platform confirms that showing users content that makes them angry results in a 400% increase in session duration compared to neutral or positive content.', puff_content: 'Nexus continues to dominate the market in user engagement metrics, with users spending more time on the platform than any competitor, creating a vibrant online ecosystem.' },
             { gate_id: 16, week_number: 20, event_code: 'GATE_PREDICTIVE_PROFILE', sender_from: 'Mom', sender_text: 'Merry Christmas, sweetie! I know you\'re busy with your presents, but this was on the morning news. Please, please be careful on that app.', positive_response: 'If it\'s on the actual news, it must be serious. I need to see this.', negative_response: 'It\'s Christmas, I\'m not worried about some news report.', leak_title: 'The \'Predictive Profile\' Is For Sale', leak_content: 'The culmination of Nexus\'s data collection is the \'Predictive Profile,\' a file sold to political campaigns, insurance companies, and advertisers that predicts a user\'s future behavior with 92% accuracy.', puff_content: 'Nexus announced its new \'Hyper-Personalization\' engine, a breakthrough in AI that will deliver a perfectly tailored content experience for every single user.' }, { gate_id: 17, week_number: 20, event_code: 'GATE_DATA_BROKERS', sender_from: 'Dad', sender_text: 'This article breaks down how all those little quizzes and posts you make are sold to data brokers to build a profile on you.', positive_response: 'That sounds awful. I need to understand this better.', negative_response: 'Everyone knows they sell your data. It\'s not a big deal.', leak_title: 'The \'Predictive Profile\' Is For Sale', leak_content: 'The culmination of Nexus\'s data collection is the \'Predictive Profile,\' a file sold to political campaigns, insurance companies, and advertisers that predicts a user\'s future behavior with 92% accuracy.', puff_content: 'Nexus announced its new \'Hyper-Personalization\' engine, a breakthrough in AI that will deliver a perfectly tailored content experience for every single user.' }, { gate_id: 18, week_number: 20, event_code: 'GATE_FINAL_REVELATION', sender_from: 'Maria', sender_text: 'Happy Holidays! I\'m sending this to everyone I care about. It\'s an article that explains what these social media companies are ACTUALLY doing with our lives.', positive_response: 'Maria is looking out for me. I have to read this.', negative_response: 'She\'s being a little dramatic, don\'t you think?', leak_title: 'The \'Predictive Profile\' Is For Sale', leak_content: 'The culmination of Nexus\'s data collection is the \'Predictive Profile,\' a file sold to political campaigns, insurance companies, and advertisers that predicts a user\'s future behavior with 92% accuracy.', puff_content: 'Nexus announced its new \'Hyper-Personalization\' engine, a breakthrough in AI that will deliver a perfectly tailored content experience for every single user.' }
         ];
-
         const staticData = [
             { data_key: 'us_states', data_value: [ { name: 'Alabama', abbr: 'AL' }, { name: 'Alaska', abbr: 'AK' }, { name: 'Arizona', abbr: 'AZ' }, { name: 'Arkansas', abbr: 'AR' }, { name: 'California', abbr: 'CA' }, { name: 'Colorado', abbr: 'CO' }, { name: 'Connecticut', abbr: 'CT' }, { name: 'Delaware', abbr: 'DE' }, { name: 'Florida', abbr: 'FL' }, { name: 'Georgia', abbr: 'GA' }, { name: 'Hawaii', abbr: 'HI' }, { name: 'Idaho', abbr: 'ID' }, { name: 'Illinois', abbr: 'IL' }, { name: 'Indiana', abbr: 'IN' }, { name: 'Iowa', abbr: 'IA' }, { name: 'Kansas', abbr: 'KS' }, { name: 'Kentucky', abbr: 'KY' }, { name: 'Louisiana', abbr: 'LA' }, { name: 'Maine', abbr: 'ME' }, { name: 'Maryland', abbr: 'MD' }, { name: 'Massachusetts', abbr: 'MA' }, { name: 'Michigan', abbr: 'MI' }, { name: 'Minnesota', abbr: 'MN' }, { name: 'Mississippi', abbr: 'MS' }, { name: 'Missouri', abbr: 'MO' }, { name: 'Montana', abbr: 'MT' }, { name: 'Nebraska', abbr: 'NE' }, { name: 'Nevada', abbr: 'NV' }, { name: 'New Hampshire', abbr: 'NH' }, { name: 'New Jersey', abbr: 'NJ' }, { name: 'New Mexico', abbr: 'NM' }, { name: 'New York', abbr: 'NY' }, { name: 'North Carolina', abbr: 'NC' }, { name: 'North Dakota', abbr: 'ND' }, { name: 'Ohio', abbr: 'OH' }, { name: 'Oklahoma', abbr: 'OK' }, { name: 'Oregon', abbr: 'OR' }, { name: 'Pennsylvania', abbr: 'PA' }, { name: 'Rhode Island', abbr: 'RI' }, { name: 'South Carolina', abbr: 'SC' }, { name: 'South Dakota', abbr: 'SD' }, { name: 'Tennessee', abbr: 'TN' }, { name: 'Texas', abbr: 'TX' }, { name: 'Utah', abbr: 'UT' }, { name: 'Vermont', abbr: 'VT' }, { name: 'Virginia', abbr: 'VA' }, { name: 'Washington', abbr: 'WA' }, { name: 'West Virginia', abbr: 'WV' }, { name: 'Wisconsin', abbr: 'WI' }, { name: 'Wyoming', abbr: 'WY' }] },
             { data_key: 'weather_data', data_value: { '1': '☀️ Hot & Humid (92°F)', '2': '☀️ Sunny (88°F)', '3': '☀️ Sunny & Hot (90°F)', '4': '🌦️ Partly Cloudy (85°F)', '5': '☀️ Pleasant (78°F)', '6': '🍂 Cool Breeze (72°F)', '7': '🍂 Crisp Autumn (65°F)', '8': '☁️ Overcast (60°F)', '9': '🍂 Cool (62°F)', '10': '🎃 Chilly (55°F)', '11': '🥶 Getting Colder (48°F)', '12': '☀️ Crisp & Sunny (50°F)', '13': '💨 Windy & Cold (42°F)', '14': '🦃 Cold (40°F)', '15': '🥶 Freezing (35°F)', '16': '🌨️ First Snowfall (33°F)', '17': '❄️ Snowy (30°F)', '18': '🚗 Cold & Clear (34°F)', '19': '🎄 Chilly (38°F)', '20': '🎁 Freezing (29°F)'} },
             { data_key: 'adjectives', data_value: ['Happy', 'Frozen', 'Shiny', 'Quiet', 'Lucky', 'Brave', 'Clever', 'Sunny', 'Cloudy', 'Dark', 'Golden', 'Iron', 'Red', 'Blue', 'Green', 'Quick', 'Silent', 'Wise'] },
-            { data_key: 'nouns', data_value: ['Meal', 'Papaya', 'Leaf', 'River', 'Panda', 'Eagle', 'Key', 'Stone', 'Star', 'Moon', 'Fox', 'Wolf', 'Book', 'Shield', 'Sword', 'Cup', 'Door', 'Road'] }
+            { data_key: 'nouns', data_value: ['Meal', 'Papaya', 'Leaf', 'River', 'Panda', 'Eagle', 'Key', 'Stone', 'Star', 'Moon', 'Fox', 'Wolf', 'Book', 'Shield', 'Sword', 'Cup', 'Door', 'Road'] },
+            { data_key: 'db_version', version: 1 } // The versioning flag
         ];
         
-        await lifeEventsCollection.insertMany(lifeEventsData);
+        await db.collection('life_events').insertMany(lifeEventsData);
         await db.collection('event_choices').insertMany(eventChoicesData);
         await db.collection('gate_events').insertMany(gateEventsData);
         await db.collection('static_data').insertMany(staticData);
         console.log('Database population complete.');
+
     } catch(e) {
         console.error("Error during database population:", e);
     }
