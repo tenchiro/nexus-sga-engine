@@ -1,148 +1,124 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- GLOBAL APP STATE & CONNECTION ---
-    // This explicitly tells the client where the server is.
-    const SERVER_URL = "https://nexus-analytics-server.onrender.com";
-    const socket = io(SERVER_URL);
-    
+    // --- GLOBAL APP STATE ---
+    const socket = io("https://nexus-analytics-server.onrender.com");
     let gameState = {};
-    let appData = {}; 
-    const gateWeeks = [3, 6, 10, 13, 16, 20];
 
     // --- DOM Elements ---
-    const consentScreen = document.getElementById('consent-screen');
-    const instructionsScreen = document.getElementById('instructions-screen');
     const loginScreen = document.getElementById('login-screen');
     const gameScreen = document.getElementById('game-screen');
-    const scoreValueEl = document.getElementById('score-value');
-    const weekDisplayEl = document.getElementById('week-display');
-    const dateDisplayEl = document.getElementById('date-display');
-    const weatherDisplayEl = document.getElementById('weather-display');
-    const lifeEventZoneEl = document.getElementById('life-event-zone');
-    const postOptionsZoneEl = document.getElementById('post-options-zone');
-    const proceedZoneEl = document.getElementById('proceed-zone');
-    const gameContentEl = document.getElementById('game-content');
-    const gateZoneEl = document.getElementById('gate-zone');
+    const consentCheckbox = document.getElementById('consent-checkbox');
+    const startButton = document.getElementById('start-semester-btn');
+    const gameContentContainer = document.querySelector('#game-screen');
     const endGameSplashEl = document.getElementById('end-game-splash');
-    const saveModalEl = document.getElementById('save-modal');
-    const passkeyDisplayEl = document.getElementById('passkey-display');
 
     // --- INITIALIZATION ---
-    function initApp() {
-        document.getElementById('agree-btn').addEventListener('click', loadAppDataAndShowInstructions);
-    }
-
-    function loadAppDataAndShowInstructions() {
-        const getStartedBtn = document.getElementById('get-started-btn');
-        consentScreen.classList.add('hidden');
-        instructionsScreen.classList.remove('hidden');
-        
-        getStartedBtn.textContent = "Loading Game Data...";
-        getStartedBtn.disabled = true;
-
-        socket.emit('client:request_app_data', (response) => {
-            if (response.status === 'error') {
-                getStartedBtn.textContent = "Error Loading!";
-                alert(`Could not load essential game data: ${response.message}`);
-                return;
+    function init() {
+        // This listener robustly controls the state of the "Begin" button.
+        consentCheckbox.addEventListener('change', () => {
+            startButton.disabled = !consentCheckbox.checked;
+            if (consentCheckbox.checked) {
+                startButton.classList.add('enabled');
+                startButton.textContent = 'Begin Semester';
+            } else {
+                startButton.classList.remove('enabled');
+                startButton.textContent = 'Agree to Consent to Begin';
             }
-            
-            appData = response.data;
-            if (!appData.us_states || !appData.weather_data || !appData.adjectives) {
-                 alert("Essential app data is missing from server response.");
-                 return;
-            }
+        });
 
-            populateStates();
-            getStartedBtn.addEventListener('click', showLoginScreen);
-            document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
-            document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
-            document.getElementById('close-modal-btn').addEventListener('click', () => location.reload());
-
-            getStartedBtn.textContent = "Let's Go";
-            getStartedBtn.disabled = false;
+        startButton.addEventListener('click', startNewGame);
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            location.reload();
         });
     }
-
-    function populateStates() { /* ... unchanged ... */ }
-    function showLoginScreen() { /* ... unchanged ... */ }
 
     // --- GAME LOGIC ---
     function startNewGame() {
         const playerName = document.getElementById('player-name').value;
-        const consentChecked = document.getElementById('consent-checkbox').checked;
-        if (!playerName) { alert("Please enter your name."); return; }
-        if (!consentChecked) { alert("You must agree to the terms to participate."); return; }
+        if (!playerName) {
+            alert("Please enter your name to begin.");
+            return;
+        }
         
         gameState = {
-            playerID: `player_${Date.now()}`, sessionID: 1, playerName: playerName,
-            playerLocation: { city: document.getElementById('player-city').value, state: document.getElementById('player-state').value },
-            currentWeek: 1, profileStrength: 0, gatesPassed: 0, 
-            hasSeenSaveInstruction: false,
+            playerID: `player_${Date.now()}`,
+            playerName: playerName,
             informationTrail: []
         };
         
         loginScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
-        updateScoreDisplay();
-        fetchLifeEvent(gameState.currentWeek);
+
+        // Since this is a simple test, we hardcode the event directly in the client
+        const placeholderEvent = {
+            week: 1,
+            lifeEvent: "You've arrived on campus. The air is buzzing with the energy of new beginnings. What's your first move?",
+            posts: [
+                { choice_text: "Contact my family to let them know I'm safe and sound.", score: 1 },
+                { choice_text: "Explore the campus to find my classes before everyone else does.", score: 0 },
+                { choice_text: "Find the nearest party and make some new friends immediately.", score: -1 }
+            ]
+        };
+        renderLifeEvent(placeholderEvent);
     }
 
-    function resumeGame() {
-        const token = document.getElementById('passkey-input').value;
-        if (!token) { alert("Please enter a Passkey."); return; }
+    function handlePost(event, choice) {
+        logAction(event, choice);
+        showFinalSplash();
+    }
+
+    function renderLifeEvent(event) {
+        // Instead of getting elements one by one, we build the entire game UI here
+        gameContentContainer.innerHTML = `
+            <div id="main-screen">
+                <div id="game-content">
+                    <div id="calendar-zone">
+                        <span>Week ${event.week}</span>
+                    </div>
+                    <div class="game-section">
+                        <p class="section-title">Life Event</p>
+                        <div id="life-event-zone">
+                            <p>${event.lifeEvent}</p>
+                        </div>
+                    </div>
+                    <div class="game-section">
+                        <p class="section-title">Create a Post</p>
+                        <div id="post-options-zone">
+                            ${event.posts.map(post => `
+                                <div class="post-option" data-score="${post.score}" data-text="${post.choice_text}">
+                                    <p>${post.choice_text}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
         
-        socket.emit('resume_game', token, (response) => {
-            if(response.status === 'error') {
-                alert(`Could not resume game: ${response.message}`);
-                return;
-            }
-            gameState = response.data;
-            gameState.sessionID++;
-
-            loginScreen.classList.add('hidden');
-            gameScreen.classList.remove('hidden');
-            updateScoreDisplay();
-            
-            proceedToNextWeek();
+        // Add event listeners to the newly created post options
+        document.querySelectorAll('.post-option').forEach(el => {
+            el.addEventListener('click', () => {
+                const choice = {
+                    choice_text: el.dataset.text,
+                    score: parseInt(el.dataset.score, 10)
+                };
+                handlePost(event, choice);
+            });
         });
     }
 
-    function saveGame() {
-        socket.emit('save_game', gameState, (response) => {
-            if(response.status === 'error') {
-                alert(`Could not save game: ${response.message}`);
-                return;
-            }
-            passkeyDisplayEl.textContent = response.token;
-            saveModalEl.classList.remove('hidden');
-        });
+    function showFinalSplash() {
+        // For this test, we don't need to submit data. Just show the screen.
+        endGameSplashEl.classList.remove('hidden');
     }
 
-    function fetchLifeEvent(week) {
-        socket.emit('get_event', week, (response) => {
-            if (response.status === 'error') { /* ... */ return; }
-            gameState.currentEvent = response.data; 
-            renderLifeEvent(response.data);
+    function logAction(event, choice) {
+        gameState.informationTrail.push({
+            timestamp: new Date().toISOString(),
+            eventWeek: event.week,
+            choiceText: choice.choice_text,
+            choiceScore: choice.score,
         });
+        console.log("Current Trail:", gameState.informationTrail);
     }
-
-    function fetchGateEvent(week) {
-         socket.emit('get_gate_event', week, (response) => {
-            if (response.status === 'error') { /* ... */ return; }
-            gameState.currentGateEvent = response.data; 
-            renderGate(response.data);
-        });
-    }
-
-    function postLifeEventAction() { /* ... unchanged ... */ }
-    function proceedToNextWeek() { /* ... unchanged ... */ }
-    function handlePost(event, post) { /* ... unchanged ... */ }
-    function renderLifeEvent(event) { /* ... unchanged ... */ }
-    function renderGate(event) { /* ... unchanged ... */ }
-    function handleGateChoice(event, score) { /* ... unchanged ... */ }
-    function showFinalSplash() { /* ... unchanged ... */ }
-    function logAction(event, choice, score) { /* ... unchanged ... */ }
-    function updateScoreDisplay() { /* ... unchanged ... */ }
-
-    initApp();
+    
+    init();
 });
