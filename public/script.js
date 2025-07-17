@@ -1,9 +1,8 @@
-// This script now runs *after* the socket.io.min.js from the CDN has loaded.
-const socket = io();
-let gameState = {};
-
-// We wrap the entire script in a DOMContentLoaded listener
 document.addEventListener('DOMContentLoaded', () => {
+    // --- GLOBAL APP STATE ---
+    const socket = io();
+    let gameState = {};
+
     // --- DOM Elements ---
     const loginScreen = document.getElementById('login-screen');
     const gameScreen = document.getElementById('game-screen');
