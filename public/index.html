@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- SCREEN 1: CONSENT (Starts Visible) -->
+        <div id="consent-screen" class="full-screen-view">
+            <h1>Research Consent</h1>
+            <p class="instructions-text">
+                This is a research game designed to study decision-making in social media environments. You will take on the role of a college student navigating their first semester.<br><br>
+                By clicking "I Agree" and playing the game, you consent to have your anonymized gameplay choices collected and used for academic research purposes. No personally identifiable information will be stored.
+            </p>
+            <button id="agree-btn" class="action-button">I Agree and Wish to Participate</button>
+        </div>
+
+        <!-- SCREEN 2: INSTRUCTIONS (Starts Hidden) -->
+        <div id="instructions-screen" class="full-screen-view hidden">
+            <h1>Nexus</h1>
+            <p class="instructions-text">
+                Get ready to live your first semester of college on Nexus, the world's most connected social app. The vibe is simple: <span class="highlight">just be you.</span><br><br>
+                Each week, a new Life Event will pop up. Your feed, your choice—pick the post that feels right. There are no wrong answers, only your story.<br>
+            </p>
+            <div class="instruction-box">
+                <p>At key moments, a button that looks like this:</p>
+                <div class="button-example">
+                    <button class="save-progress-button" disabled>Take a Break</button>
+                </div>
+                <p>will allow you to save your progress and return later. A unique two-word Passkey is your only ticket back, so write it down!</p>
+            </div>
+            <button id="get-started-btn" class="action-button" disabled>Loading Game Data...</button>
+        </div>
+        
+        <!-- SCREEN 3: LOGIN / RESUME (Starts Hidden) -->
+        <div id="login-screen" class="full-screen-view hidden">
+             <!-- ... (The full login/resume form from the final version) ... -->
+        </div>
+
+        <!-- MAIN GAME SCREEN (Starts Hidden) -->
+        <div id="game-screen" class="hidden">
+             <!-- ... (The full game screen layout) ... -->
+        </div>
+
+        <!-- MODALS -->
+        <div id="save-modal" class="modal-overlay hidden">
+             <!-- ... (The save modal layout) ... -->
+        </div>
+        <div id="end-game-splash" class="modal-overlay hidden">
+             <div class="modal-content final-splash"></div>
+        </div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
