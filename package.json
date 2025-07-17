@@ -1,10 +1,11 @@
 {
-  "name": "sga-core-engine-final",
-  "version": "2.1.0",
-  "description": "A working Serious Games Analytics Platform with correct CORS handling",
+  "name": "sga-db-test",
+  "version": "1.0.0",
+  "description": "A minimal test to verify the Node.js to MongoDB connection.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "populate-test": "node populate_test_db.js"
   },
   "author": "C.S. Loh & Nexus AI",
   "license": "UNLICENSED",
