@@ -1,9 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- GLOBAL APP STATE ---
-    const socket = io();
-    let gameState = {};
+    // --- DOM Elements for Logging ---
+    const debugOutput = document.getElementById('debug-output');
+    const log = (message) => {
+        console.log(message);
+        debugOutput.textContent = message;
+    };
+    log("DOM loaded. Script starting.");
 
-    // --- DOM Elements ---
+    // --- GLOBAL APP STATE & DOM ---
+    let gameState = {};
+    const socket = io({
+        reconnectionAttempts: 3,
+        timeout: 10000,
+    });
+    
+    log("Socket object created.");
+
+    // --- SOCKET EVENT LISTENERS ---
+    socket.on('connect', () => {
+        log("STATUS: Successfully connected to server.");
+    });
+    
+    socket.on('connect_error', (err) => {
+        log(`ERROR: Connection failed!\nReason: ${err.message}`);
+    });
+
     const loginScreen = document.getElementById('login-screen');
     const gameScreen = document.getElementById('game-screen');
     const consentCheckbox = document.getElementById('consent-checkbox');
@@ -15,67 +36,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     function init() {
-        // This listener robustly controls the state of the "Begin" button.
+        log("Initializing event listeners...");
         consentCheckbox.addEventListener('change', () => {
             startButton.disabled = !consentCheckbox.checked;
-            if (consentCheckbox.checked) {
-                startButton.style.backgroundColor = 'var(--green-accent)';
-                startButton.textContent = 'Begin Semester';
-            } else {
-                startButton.style.backgroundColor = 'var(--tertiary-bg)';
-                startButton.textContent = 'Agree to Consent to Begin';
-            }
         });
 
-        // Attach event listeners to the main action buttons.
         startButton.addEventListener('click', startNewGame);
         document.getElementById('replay-btn').addEventListener('click', () => {
-            location.reload(); // The simplest way to restart the experience.
+            location.reload();
         });
 
-        // Set the initial state of the button.
         startButton.disabled = true;
-        startButton.textContent = 'Agree to Consent to Begin';
+        log("Initialization complete. Waiting for consent.");
     }
 
     // --- GAME LOGIC ---
-
-    // 1. Called when the player clicks "Begin Semester".
     function startNewGame() {
         const playerName = document.getElementById('player-name').value;
         if (!playerName) {
             alert("Please enter your name to begin.");
             return;
         }
+        log(`Starting game for ${playerName}...`);
         
-        // Initialize the gameState object for this session.
-        gameState = {
-            playerID: `player_${Date.now()}`,
-            playerName: playerName,
-            informationTrail: []
-        };
+        gameState = { playerID: `player_${Date.now()}`, playerName: playerName, informationTrail: [] };
         
-        // Transition the UI from the login screen to the game screen.
         loginScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
 
-        // Request the first event from the server via WebSocket.
+        log("Emitting 'get_first_event' to server...");
         socket.emit('get_first_event', (response) => {
-            if (response.status === 'success') {
+            log("Received response from server.");
+            if (response && response.status === 'success') {
+                log("Response is SUCCESS. Rendering event.");
                 renderLifeEvent(response.data);
             } else {
-                alert(`Error loading event: ${response.message}`);
+                log(`ERROR: Server response was not successful.\n${JSON.stringify(response)}`);
+                alert(`Error loading event: ${response ? response.message : 'No response from server.'}`);
             }
         });
     }
 
-    // 2. Called when a player clicks on one of the post options.
     function handlePost(event, choice) {
+        log(`Choice made: ${choice.choice_text}`);
         logAction(event, choice);
         showFinalSplash();
     }
 
-    // 3. Renders the event data received from the server onto the page.
     function renderLifeEvent(event) {
         weekDisplayEl.textContent = `Week ${event.week}`;
         lifeEventZoneEl.innerHTML = `<p>${event.lifeEvent}</p>`;
@@ -88,17 +95,15 @@ document.addEventListener('DOMContentLoaded', () => {
             postEl.onclick = () => handlePost(event, post);
             postOptionsZoneEl.appendChild(postEl);
         });
+        log("Life event rendered successfully.");
     }
 
-    // 4. Ends the game, submits data, and shows the final modal.
     function showFinalSplash() {
-        // Send the complete game state to the server for logging.
+        log("Submitting final data and showing endgame screen.");
         socket.emit('submit_final_data', gameState);
-        // Display the endgame modal.
         endGameSplashEl.classList.remove('hidden');
     }
 
-    // 5. Records a player's action into the local gameState object.
     function logAction(event, choice) {
         gameState.informationTrail.push({
             timestamp: new Date().toISOString(),
@@ -108,6 +113,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Run the initialization function once the page is fully loaded.
     init();
 });

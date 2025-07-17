@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-:root{--primary-bg:#121212;--secondary-bg:#1e1e1e;--tertiary-bg:#2a2a2a;--font-color:#e0e0e0;--accent-color:#4a90e2;--green-accent:#2ecc71;}
+:root{--primary-bg:#121212;--secondary-bg:#1e1e1e;--tertiary-bg:#2a2a2a;--font-color:#e0e0e0;--accent-color:#4a90e2;--green-accent:#2ecc71;--red-accent:#e74c3c;--grey-accent:#7f8c8d;}
 body{font-family:'Roboto',sans-serif;background-color:#333;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;color:var(--font-color);}
 #game-container{width:375px;height:812px;background-color:var(--primary-bg);border:10px solid #000;border-radius:40px;box-shadow:0 10px 30px rgba(0,0,0,0.5);display:flex;flex-direction:column;overflow:hidden;position:relative;}
 .full-screen-view{display:flex;flex-direction:column;padding:30px;text-align:center;height:100%;justify-content:center;}
@@ -13,8 +13,8 @@ body{font-family:'Roboto',sans-serif;background-color:#333;display:flex;justify-
 .action-button{background-color:var(--accent-color);color:white;border:none;padding:15px;border-radius:8px;font-size:18px;font-weight:700;cursor:pointer;width:100%;transition:background-color 0.3s;margin-top:20px;}
 .action-button:disabled{background-color:var(--tertiary-bg);color:var(--grey-accent);cursor:not-allowed;}
 .action-button:not(:disabled):hover{background-color:#3a80d2;}
-#game-screen{display:flex;flex-direction:column;height:100%;}
-#main-screen{flex-grow:1;padding:15px;overflow-y:auto;}
+#game-screen{display:flex;flex-direction:column;height:100%;padding:15px;}
+#main-screen{flex-grow:1;overflow-y:auto;}
 #calendar-zone{padding:10px;background-color:var(--secondary-bg);border-radius:8px;margin-bottom:15px;text-align:center;font-weight:500;}
 .game-section{background-color:var(--secondary-bg);border-radius:12px;padding:15px;margin-bottom:15px;}
 .section-title{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--grey-accent);margin-bottom:10px;font-weight:700;}
@@ -26,3 +26,7 @@ body{font-family:'Roboto',sans-serif;background-color:#333;display:flex;justify-
 .modal-content{background-color:var(--secondary-bg);padding:30px;border-radius:12px;text-align:center;box-shadow:0 5px 25px rgba(0,0,0,0.5);max-width:90%;}
 .final-splash h2{color:var(--accent-color);}
 .hidden{display:none !important;}
+/* New Debug Styles */
+#debug-log { position: fixed; bottom: 20px; left: 20px; background-color: rgba(0,0,0,0.8); border: 1px solid #555; padding: 10px; font-family: monospace; font-size: 12px; color: #fff; max-width: 330px; z-index: 100; border-radius: 5px; }
+#debug-log h4 { margin: 0 0 5px 0; color: var(--green-accent); }
+#debug-log div { white-space: pre-wrap; word-wrap: break-word; }

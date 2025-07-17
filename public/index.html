@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus 2.0</title>
+    <title>Nexus 2.0 - DIAGNOSTIC</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- This div will show us exactly what the script is doing -->
+    <div id="debug-log">
+        <h4>DIAGNOSTIC LOG</h4>
+        <div id="debug-output">Initializing...</div>
+    </div>
+
     <div id="game-container">
         <!-- LOGIN SCREEN (Starts Visible) -->
         <div id="login-screen" class="full-screen-view">
@@ -46,7 +52,7 @@
              <div class="modal-content final-splash">
                 <h2>Semester Over</h2>
                 <p>Your first week is complete. Thank you for participating.</p>
-                <button id="replay-btn" class="action-button">Replay the Game</button>
+                <button id="replay-btn" class="action-button">Replay</button>
              </div>
         </div>
     </div>
