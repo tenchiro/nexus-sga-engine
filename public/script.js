@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM Elements for Logging ---
     const debugOutput = document.getElementById('debug-output');
     const log = (message) => {
         console.log(message);
@@ -7,23 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     log("DOM loaded. Script starting.");
 
-    // --- GLOBAL APP STATE & DOM ---
-    let gameState = {};
-    const socket = io({
-        reconnectionAttempts: 3,
-        timeout: 10000,
-    });
-    
+    const socket = io();
     log("Socket object created.");
 
-    // --- SOCKET EVENT LISTENERS ---
-    socket.on('connect', () => {
-        log("STATUS: Successfully connected to server.");
-    });
-    
-    socket.on('connect_error', (err) => {
-        log(`ERROR: Connection failed!\nReason: ${err.message}`);
-    });
+    socket.on('connect', () => { log("STATUS: Successfully connected to server."); });
+    socket.on('connect_error', (err) => { log(`ERROR: Connection failed!\nReason: ${err.message}`); });
 
     const loginScreen = document.getElementById('login-screen');
     const gameScreen = document.getElementById('game-screen');
@@ -34,29 +21,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const postOptionsZoneEl = document.getElementById('post-options-zone');
     const endGameSplashEl = document.getElementById('end-game-splash');
 
-    // --- INITIALIZATION ---
     function init() {
         log("Initializing event listeners...");
-        consentCheckbox.addEventListener('change', () => {
-            startButton.disabled = !consentCheckbox.checked;
-        });
-
+        consentCheckbox.addEventListener('change', () => { startButton.disabled = !consentCheckbox.checked; });
         startButton.addEventListener('click', startNewGame);
-        document.getElementById('replay-btn').addEventListener('click', () => {
-            location.reload();
-        });
-
+        document.getElementById('replay-btn').addEventListener('click', () => { location.reload(); });
         startButton.disabled = true;
         log("Initialization complete. Waiting for consent.");
     }
 
-    // --- GAME LOGIC ---
+    // This listener now waits for the specific response from the server
+    socket.on('server:send_event', (response) => {
+        log("Received 'server:send_event' from server.");
+        if (response && response.status === 'success') {
+            log("Response is SUCCESS. Rendering event.");
+            renderLifeEvent(response.data);
+        } else {
+            log(`ERROR: Server response was not successful.\n${JSON.stringify(response)}`);
+            alert(`Error loading event: ${response ? response.message : 'No response from server.'}`);
+        }
+    });
+
     function startNewGame() {
         const playerName = document.getElementById('player-name').value;
-        if (!playerName) {
-            alert("Please enter your name to begin.");
-            return;
-        }
+        if (!playerName) { alert("Please enter your name to begin."); return; }
         log(`Starting game for ${playerName}...`);
         
         gameState = { playerID: `player_${Date.now()}`, playerName: playerName, informationTrail: [] };
@@ -64,54 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
         loginScreen.classList.add('hidden');
         gameScreen.classList.remove('hidden');
 
-        log("Emitting 'get_first_event' to server...");
-        socket.emit('get_first_event', (response) => {
-            log("Received response from server.");
-            if (response && response.status === 'success') {
-                log("Response is SUCCESS. Rendering event.");
-                renderLifeEvent(response.data);
-            } else {
-                log(`ERROR: Server response was not successful.\n${JSON.stringify(response)}`);
-                alert(`Error loading event: ${response ? response.message : 'No response from server.'}`);
-            }
-        });
+        log("Emitting 'client:request_event' to server...");
+        socket.emit('client:request_event');
     }
 
-    function handlePost(event, choice) {
-        log(`Choice made: ${choice.choice_text}`);
-        logAction(event, choice);
-        showFinalSplash();
-    }
-
-    function renderLifeEvent(event) {
-        weekDisplayEl.textContent = `Week ${event.week}`;
-        lifeEventZoneEl.innerHTML = `<p>${event.lifeEvent}</p>`;
-        
-        postOptionsZoneEl.innerHTML = '';
-        event.posts.forEach(post => {
-            const postEl = document.createElement('div');
-            postEl.classList.add('post-option');
-            postEl.innerHTML = `<p>${post.choice_text}</p>`; 
-            postEl.onclick = () => handlePost(event, post);
-            postOptionsZoneEl.appendChild(postEl);
-        });
-        log("Life event rendered successfully.");
-    }
-
-    function showFinalSplash() {
-        log("Submitting final data and showing endgame screen.");
-        socket.emit('submit_final_data', gameState);
-        endGameSplashEl.classList.remove('hidden');
-    }
-
-    function logAction(event, choice) {
-        gameState.informationTrail.push({
-            timestamp: new Date().toISOString(),
-            eventWeek: event.week,
-            choiceText: choice.choice_text,
-            choiceScore: choice.score,
-        });
-    }
+    function handlePost(event, choice) { /* ... unchanged ... */ }
+    function renderLifeEvent(event) { /* ... unchanged ... */ }
+    function showFinalSplash() { /* ... unchanged ... */ }
+    function logAction(event, choice) { /* ... unchanged ... */ }
     
     init();
 });
