@@ -2,29 +2,25 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
-// const { MongoClient } = require('mongodb'); // Still disabled for this test
 
 const app = express();
 const server = http.createServer(app);
 
-// --- THE FIX IS HERE ---
-// This configures the Socket.IO server to allow connections
-// from any origin. This is safe for our current testing phase.
 const io = new Server(server, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"]
     }
 });
-// --- END OF FIX ---
 
 app.use(express.static('public'));
 
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
-    socket.on('get_first_event', (callback) => {
-        console.log("Server received 'get_first_event'. Sending placeholder.");
+    // Listen for the specific request from the client
+    socket.on('client:request_event', () => {
+        console.log(`Server received 'client:request_event' from ${socket.id}.`);
         const placeholderEvent = {
             week: 1,
             lifeEvent: "You've arrived on campus. The air is buzzing with the energy of new beginnings. What's your first move?",
@@ -34,7 +30,9 @@ io.on('connection', (socket) => {
                 { choice_text: "Find the nearest party and make some new friends immediately.", score: -1 }
             ]
         };
-        if(callback) callback({ status: 'success', data: placeholderEvent });
+        // Emit a specific response back to the client
+        socket.emit('server:send_event', { status: 'success', data: placeholderEvent });
+        console.log("Server sent placeholder event back to client.");
     });
 
     socket.on('submit_final_data', (sessionData) => {
@@ -49,5 +47,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Nexus 2.0 (DIAGNOSTIC MODE) server running on port ${PORT}`);
+    console.log(`Nexus 2.0 (DIAGNOSTIC MODE V2) server running on port ${PORT}`);
 });
