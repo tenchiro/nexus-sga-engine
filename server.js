@@ -47,13 +47,4 @@ const PORT = process.env.PORT || 3000;
 // We don't need to wait for a DB connection, so we start the server directly
 server.listen(PORT, () => {
     console.log(`Nexus 2.0 (DIAGNOSTIC MODE) server running on port ${PORT}`);
-});```
-
-### Step 2: Deploy and Test
-
-1.  **Deploy:** Push this new `server.js` to your GitHub repository. Render will automatically redeploy your application.
-2.  **Test:** Open your game's URL and click through the consent and login screens.
-
-**Expected Outcome:** You should now see the placeholder "Life Event" and the three post options correctly displayed. Clicking an option should take you to the endgame screen.
-
-Once you confirm this works, we will have isolated the problem to the database population step.
+});
