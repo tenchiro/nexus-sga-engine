@@ -45,7 +45,6 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
-    // Handles the initial request for static game data (states, weather, etc.)
     socket.on('client:request_app_data', async (callback) => {
         try {
             const staticDataCollection = db.collection('static_data');
@@ -61,7 +60,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Fetches a random Life Event for a given week
     socket.on('get_event', async (week, callback) => {
         try {
             const eventsCollection = db.collection('life_events');
@@ -74,20 +72,18 @@ io.on('connection', (socket) => {
                 event.posts = await choicesCursor.toArray();
                 if(callback) callback({ status: 'success', data: event });
             } else {
-                 if(callback) callback({ status: 'error', message: `No event found for week ${week}` });
+                if(callback) callback({ status: 'error', message: `No event found for week ${week}` });
             }
         } catch (e) {
              if(callback) callback({ status: 'error', message: 'Database error while fetching event.' });
         }
     });
     
-    // Fetches a random Gate Event for a given week
     socket.on('get_gate_event', async (week, callback) => {
         try {
             const gatesCollection = db.collection('gate_events');
             const gateCursor = await gatesCollection.aggregate([{ $match: { week_number: week } }, { $sample: { size: 1 } }]);
             const gateEvent = await gateCursor.next();
-
             if(gateEvent) {
                 if(callback) callback({ status: 'success', data: gateEvent });
             } else {
@@ -98,7 +94,6 @@ io.on('connection', (socket) => {
         }
     });
     
-    // Submits the final session data for archival
     socket.on('submit_final_data', async (sessionData) => {
         try {
             const resultsCollection = db.collection('completed_sessions');
@@ -109,7 +104,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Saves a game state and returns a secure, single-use token
     socket.on('save_game', async (gameStateData, callback) => {
         try {
             const token = crypto.randomBytes(16).toString('hex');
@@ -130,16 +124,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Resumes a game using a secure token, then deletes the token
     socket.on('resume_game', async (token, callback) => {
         try {
             const player_ip = socket.handshake.address;
             const savedSessionsCollection = db.collection('saved_sessions');
             
-            const savedState = await savedSessionsCollection.findOneAndDelete({ token: token, player_ip: player_ip });
+            const findResult = await savedSessionsCollection.findOneAndDelete({ token: token, player_ip: player_ip });
 
-            if (savedState.value) {
-                if(callback) callback({ status: 'success', data: savedState.value.session_data });
+            if (findResult) {
+                if(callback) callback({ status: 'success', data: findResult.session_data });
             } else {
                 if(callback) callback({ status: 'error', message: 'Invalid or expired Passkey.' });
             }
@@ -154,5 +147,4 @@ io.on('connection', (socket) => {
     });
 });
 
-// --- Start Application ---
 connectToDbAndStartServer();
