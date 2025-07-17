@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGA Engine Test</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="test-container">
+        <h1>Hello, Analytics World!</h1>
+        <p>This page tests the full connection from browser to server to database.</p>
+        <button id="test-button">Click to Test Database</button>
+        <div id="server-log">
+            <h2>Server Log:</h2>
+            <p id="log-message">Waiting for test...</p>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
