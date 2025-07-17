@@ -6,19 +6,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     log("DOM loaded. Script starting.");
 
-    // --- THE FIX ---
-    // **REPLACE THIS URL with the public URL of YOUR Render Web Service**
-    const SERVER_URL = "https://nexus-analytics-server.onrender.com/";
-    // ----------------
+    // --- The Correct Server URL is now hardcoded ---
+    const SERVER_URL = "https://nexus-analytics-server.onrender.com";
     
     log(`Attempting to connect to server at: ${SERVER_URL}`);
     const socket = io(SERVER_URL);
 
-    //... The rest of the file is IDENTICAL to the previous Diagnostic version ...
+    // --- Socket Event Listeners ---
+    socket.on('connect', () => {
+        log("STATUS: Successfully connected to server.");
+    });
+    
+    socket.on('connect_error', (err) => {
+        log(`ERROR: Connection failed!\nReason: ${err.message}`);
+    });
 
-    socket.on('connect', () => { log("STATUS: Successfully connected to server."); });
-    socket.on('connect_error', (err) => { log(`ERROR: Connection failed!\nReason: ${err.message}`); });
-
+    // --- DOM Elements ---
     const loginScreen = document.getElementById('login-screen');
     const gameScreen = document.getElementById('game-screen');
     const consentCheckbox = document.getElementById('consent-checkbox');
@@ -28,15 +31,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const postOptionsZoneEl = document.getElementById('post-options-zone');
     const endGameSplashEl = document.getElementById('end-game-splash');
 
+    // --- Initialization ---
     function init() {
         log("Initializing event listeners...");
-        consentCheckbox.addEventListener('change', () => { startButton.disabled = !consentCheckbox.checked; });
+        consentCheckbox.addEventListener('change', () => {
+            startButton.disabled = !consentCheckbox.checked;
+        });
         startButton.addEventListener('click', startNewGame);
-        document.getElementById('replay-btn').addEventListener('click', () => { location.reload(); });
+        document.getElementById('replay-btn').addEventListener('click', () => {
+            location.reload();
+        });
         startButton.disabled = true;
         log("Initialization complete. Waiting for consent.");
     }
 
+    // --- Custom Event Listener ---
     socket.on('server:send_event', (response) => {
         log("Received 'server:send_event' from server.");
         if (response && response.status === 'success') {
@@ -48,9 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Game Logic ---
     function startNewGame() {
         const playerName = document.getElementById('player-name').value;
-        if (!playerName) { alert("Please enter your name to begin."); return; }
+        if (!playerName) {
+            alert("Please enter your name to begin.");
+            return;
+        }
         log(`Starting game for ${playerName}...`);
         
         gameState = { playerID: `player_${Date.now()}`, playerName: playerName, informationTrail: [] };
