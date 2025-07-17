@@ -1,3 +1,4 @@
+// --- GLOBAL APP STATE ---
 const socket = io();
 let gameState = {};
 
@@ -12,13 +13,18 @@ const postOptionsZoneEl = document.getElementById('post-options-zone');
 const endGameSplashEl = document.getElementById('end-game-splash');
 
 // --- INITIALIZATION ---
-function init() {
+// **THE FIX**: We wait for the DOM to be fully loaded before running our script
+document.addEventListener('DOMContentLoaded', () => {
     // Logic for enabling/disabling the start button based on consent
     consentCheckbox.addEventListener('change', () => {
+        // A more robust way to handle the button state
+        startButton.disabled = !consentCheckbox.checked;
         if (consentCheckbox.checked) {
-            startButton.disabled = false;
+            startButton.style.backgroundColor = 'var(--green-accent)';
+            startButton.textContent = 'Begin Semester';
         } else {
-            startButton.disabled = true;
+            startButton.style.backgroundColor = 'var(--tertiary-bg)';
+            startButton.textContent = 'Agree to Consent to Begin';
         }
     });
 
@@ -26,10 +32,16 @@ function init() {
     document.getElementById('replay-btn').addEventListener('click', () => {
         location.reload();
     });
-}
+
+    // Set the initial button state when the page loads
+    startButton.disabled = true;
+    startButton.textContent = 'Agree to Consent to Begin';
+});
+
 
 // --- GAME LOGIC ---
 function startNewGame() {
+    // The `disabled` property on the button now prevents this from running if consent is not checked.
     const playerName = document.getElementById('player-name').value;
     if (!playerName) {
         alert("Please enter your name to begin.");
@@ -56,9 +68,7 @@ function startNewGame() {
 }
 
 function handlePost(event, choice) {
-    // Log the choice
     logAction(event, choice);
-    // End the game
     showFinalSplash();
 }
 
@@ -77,9 +87,7 @@ function renderLifeEvent(event) {
 }
 
 function showFinalSplash() {
-    // Send final data to server
     socket.emit('submit_final_data', gameState);
-    // Show the endgame screen
     endGameSplashEl.classList.remove('hidden');
 }
 
@@ -91,6 +99,3 @@ function logAction(event, choice) {
         choiceScore: choice.score,
     });
 }
-
-// --- SCRIPT INITIALIZATION ---
-init();
