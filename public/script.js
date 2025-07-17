@@ -6,8 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     log("DOM loaded. Script starting.");
 
-    const socket = io();
-    log("Socket object created.");
+    // --- THE FIX ---
+    // **REPLACE THIS URL with the public URL of YOUR Render Web Service**
+    const SERVER_URL = "https://nexus-game.onrender.com/";
+    // ----------------
+    
+    log(`Attempting to connect to server at: ${SERVER_URL}`);
+    const socket = io(SERVER_URL);
+
+    //... The rest of the file is IDENTICAL to the previous Diagnostic version ...
 
     socket.on('connect', () => { log("STATUS: Successfully connected to server."); });
     socket.on('connect_error', (err) => { log(`ERROR: Connection failed!\nReason: ${err.message}`); });
@@ -30,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
         log("Initialization complete. Waiting for consent.");
     }
 
-    // This listener now waits for the specific response from the server
     socket.on('server:send_event', (response) => {
         log("Received 'server:send_event' from server.");
         if (response && response.status === 'success') {
@@ -56,10 +62,41 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('client:request_event');
     }
 
-    function handlePost(event, choice) { /* ... unchanged ... */ }
-    function renderLifeEvent(event) { /* ... unchanged ... */ }
-    function showFinalSplash() { /* ... unchanged ... */ }
-    function logAction(event, choice) { /* ... unchanged ... */ }
+    function handlePost(event, choice) {
+        log(`Choice made: ${choice.choice_text}`);
+        logAction(event, choice);
+        showFinalSplash();
+    }
+
+    function renderLifeEvent(event) {
+        weekDisplayEl.textContent = `Week ${event.week}`;
+        lifeEventZoneEl.innerHTML = `<p>${event.lifeEvent}</p>`;
+        
+        postOptionsZoneEl.innerHTML = '';
+        event.posts.forEach(post => {
+            const postEl = document.createElement('div');
+            postEl.classList.add('post-option');
+            postEl.innerHTML = `<p>${post.choice_text}</p>`; 
+            postEl.onclick = () => handlePost(event, post);
+            postOptionsZoneEl.appendChild(postEl);
+        });
+        log("Life event rendered successfully.");
+    }
+
+    function showFinalSplash() {
+        log("Submitting final data and showing endgame screen.");
+        socket.emit('submit_final_data', gameState);
+        endGameSplashEl.classList.remove('hidden');
+    }
+
+    function logAction(event, choice) {
+        gameState.informationTrail.push({
+            timestamp: new Date().toISOString(),
+            eventWeek: event.week,
+            choiceText: choice.choice_text,
+            choiceScore: choice.score,
+        });
+    }
     
     init();
 });
