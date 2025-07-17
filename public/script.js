@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- THE FIX ---
     // **REPLACE THIS URL with the public URL of YOUR Render Web Service**
-    const SERVER_URL = "https://nexus-game.onrender.com/";
+    const SERVER_URL = "https://nexus-analytics-server.onrender.com/";
     // ----------------
     
     log(`Attempting to connect to server at: ${SERVER_URL}`);
