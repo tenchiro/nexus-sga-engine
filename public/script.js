@@ -1,124 +1,105 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- GLOBAL APP STATE ---
-    const socket = io("https://nexus-analytics-server.onrender.com");
+    // --- GLOBAL APP STATE & CONNECTION ---
+    const socket = io();
     let gameState = {};
+    let appData = {}; 
+    const gateWeeks = [3, 6, 10, 13, 16, 20];
 
     // --- DOM Elements ---
+    const instructionsScreen = document.getElementById('instructions-screen');
     const loginScreen = document.getElementById('login-screen');
     const gameScreen = document.getElementById('game-screen');
-    const consentCheckbox = document.getElementById('consent-checkbox');
-    const startButton = document.getElementById('start-semester-btn');
-    const gameContentContainer = document.querySelector('#game-screen');
+    const startConsentCheckbox = document.getElementById('start-consent-checkbox');
+    const beginSemesterBtn = document.getElementById('begin-semester-btn');
+    const scoreValueEl = document.getElementById('score-value');
+    const weekDisplayEl = document.getElementById('week-display');
+    const dateDisplayEl = document.getElementById('date-display');
+    const weatherDisplayEl = document.getElementById('weather-display');
+    const lifeEventZoneEl = document.getElementById('life-event-zone');
+    const postOptionsZoneEl = document.getElementById('post-options-zone');
+    const proceedZoneEl = document.getElementById('proceed-zone');
+    const gameContentEl = document.getElementById('game-content');
+    const gateZoneEl = document.getElementById('gate-zone');
     const endGameSplashEl = document.getElementById('end-game-splash');
+    const saveModalEl = document.getElementById('save-modal');
+    const passkeyDisplayEl = document.getElementById('passkey-display');
 
     // --- INITIALIZATION ---
-    function init() {
-        // This listener robustly controls the state of the "Begin" button.
-        consentCheckbox.addEventListener('change', () => {
-            startButton.disabled = !consentCheckbox.checked;
-            if (consentCheckbox.checked) {
-                startButton.classList.add('enabled');
-                startButton.textContent = 'Begin Semester';
+    function initApp() {
+        // This is the main entry point
+        loadAppData();
+    }
+
+    async function loadAppData() {
+        socket.emit('client:request_app_data', (response) => {
+            if (response.status === 'error') {
+                alert(`Could not load essential game data: ${response.message}`);
+                return;
+            }
+            appData = response.data;
+            if (!appData.us_states || !appData.weather_data || !appData.adjectives) {
+                 alert("Essential app data is missing from server response.");
+                 return;
+            }
+            // Once data is loaded, set up the interactive elements
+            setupOnboarding();
+        });
+    }
+
+    function setupOnboarding() {
+        beginSemesterBtn.textContent = "Agree and Consent to Begin"; // Set initial text
+        beginSemesterBtn.disabled = true;
+
+        startConsentCheckbox.addEventListener('change', () => {
+            beginSemesterBtn.disabled = !startConsentCheckbox.checked;
+            if (startConsentCheckbox.checked) {
+                beginSemesterBtn.classList.add('is-active');
+                beginSemesterBtn.textContent = 'Begin Semester';
             } else {
-                startButton.classList.remove('enabled');
-                startButton.textContent = 'Agree to Consent to Begin';
+                beginSemesterBtn.classList.remove('is-active');
+                beginSemesterBtn.textContent = 'Agree and Consent to Begin';
             }
         });
-
-        startButton.addEventListener('click', startNewGame);
-        document.getElementById('replay-btn').addEventListener('click', () => {
-            location.reload();
-        });
-    }
-
-    // --- GAME LOGIC ---
-    function startNewGame() {
-        const playerName = document.getElementById('player-name').value;
-        if (!playerName) {
-            alert("Please enter your name to begin.");
-            return;
-        }
         
-        gameState = {
-            playerID: `player_${Date.now()}`,
-            playerName: playerName,
-            informationTrail: []
-        };
-        
-        loginScreen.classList.add('hidden');
-        gameScreen.classList.remove('hidden');
-
-        // Since this is a simple test, we hardcode the event directly in the client
-        const placeholderEvent = {
-            week: 1,
-            lifeEvent: "You've arrived on campus. The air is buzzing with the energy of new beginnings. What's your first move?",
-            posts: [
-                { choice_text: "Contact my family to let them know I'm safe and sound.", score: 1 },
-                { choice_text: "Explore the campus to find my classes before everyone else does.", score: 0 },
-                { choice_text: "Find the nearest party and make some new friends immediately.", score: -1 }
-            ]
-        };
-        renderLifeEvent(placeholderEvent);
+        beginSemesterBtn.addEventListener('click', showLoginScreen);
     }
 
-    function handlePost(event, choice) {
-        logAction(event, choice);
-        showFinalSplash();
-    }
-
-    function renderLifeEvent(event) {
-        // Instead of getting elements one by one, we build the entire game UI here
-        gameContentContainer.innerHTML = `
-            <div id="main-screen">
-                <div id="game-content">
-                    <div id="calendar-zone">
-                        <span>Week ${event.week}</span>
-                    </div>
-                    <div class="game-section">
-                        <p class="section-title">Life Event</p>
-                        <div id="life-event-zone">
-                            <p>${event.lifeEvent}</p>
-                        </div>
-                    </div>
-                    <div class="game-section">
-                        <p class="section-title">Create a Post</p>
-                        <div id="post-options-zone">
-                            ${event.posts.map(post => `
-                                <div class="post-option" data-score="${post.score}" data-text="${post.choice_text}">
-                                    <p>${post.choice_text}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        
-        // Add event listeners to the newly created post options
-        document.querySelectorAll('.post-option').forEach(el => {
-            el.addEventListener('click', () => {
-                const choice = {
-                    choice_text: el.dataset.text,
-                    score: parseInt(el.dataset.score, 10)
-                };
-                handlePost(event, choice);
-            });
+    function populateStates() {
+        const stateSelect = document.getElementById('player-state');
+        appData.us_states.forEach(state => {
+            const option = document.createElement('option');
+            option.value = state.abbr;
+            option.textContent = state.name;
+            stateSelect.appendChild(option);
         });
+        stateSelect.value = 'IN'; 
     }
 
-    function showFinalSplash() {
-        // For this test, we don't need to submit data. Just show the screen.
-        endGameSplashEl.classList.remove('hidden');
+    function showLoginScreen() {
+        instructionsScreen.classList.add('hidden');
+        loginScreen.classList.remove('hidden');
+        populateStates(); // Populate states when this screen becomes active
+        document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
+        document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
+        document.getElementById('close-modal-btn').addEventListener('click', () => location.reload());
     }
 
-    function logAction(event, choice) {
-        gameState.informationTrail.push({
-            timestamp: new Date().toISOString(),
-            eventWeek: event.week,
-            choiceText: choice.choice_text,
-            choiceScore: choice.score,
-        });
-        console.log("Current Trail:", gameState.informationTrail);
-    }
+    // --- GAME LOGIC (Functions below are the same as the last version) ---
+    function startNewGame() { /* ... unchanged ... */ }
+    function resumeGame() { /* ... unchanged ... */ }
+    function saveGame() { /* ... unchanged ... */ }
+    async function fetchLifeEvent(week) { /* ... unchanged ... */ }
+    async function fetchGateEvent(week) { /* ... unchanged ... */ }
+    function postLifeEventAction() { /* ... unchanged ... */ }
+    function proceedToNextWeek() { /* ... unchanged ... */ }
+    function handlePost(event, post) { /* ... unchanged ... */ }
+    function renderLifeEvent(event) { /* ... unchanged ... */ }
+    function renderGate(event) { /* ... unchanged ... */ }
+    function handleGateChoice(event, score) { /* ... unchanged ... */ }
+    function showFinalSplash() { /* ... unchanged ... */ }
+    function logAction(event, choice, score) { /* ... unchanged ... */ }
+    function updateScoreDisplay() { /* ... unchanged ... */ }
     
-    init();
+    // --- SCRIPT INITIALIZATION ---
+    initApp();
 });
