@@ -55,7 +55,6 @@ io.on('connection', (socket) => {
             }
             if (callback) callback({ status: 'success', data: appData });
         } catch (e) {
-            console.error('Error fetching app data:', e);
             if (callback) callback({ status: 'error', message: 'Could not load app data from database.' });
         }
     });
@@ -72,7 +71,7 @@ io.on('connection', (socket) => {
                 event.posts = await choicesCursor.toArray();
                 if(callback) callback({ status: 'success', data: event });
             } else {
-                if(callback) callback({ status: 'error', message: `No event found for week ${week}` });
+                 if(callback) callback({ status: 'error', message: `No event found for week ${week}` });
             }
         } catch (e) {
              if(callback) callback({ status: 'error', message: 'Database error while fetching event.' });
@@ -119,7 +118,6 @@ io.on('connection', (socket) => {
             
             if(callback) callback({ status: 'success', token: token });
         } catch (e) {
-            console.error('Error saving game:', e);
             if(callback) callback({ status: 'error', message: 'Failed to save session.' });
         }
     });
@@ -137,7 +135,6 @@ io.on('connection', (socket) => {
                 if(callback) callback({ status: 'error', message: 'Invalid or expired Passkey.' });
             }
         } catch (e) {
-            console.error('Error resuming game:', e);
             if(callback) callback({ status: 'error', message: 'An error occurred while resuming the game.' });
         }
     });
