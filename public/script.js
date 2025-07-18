@@ -26,18 +26,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     function initApp() {
+        // This is the main entry point for the entire application.
+        // It fetches essential data first, then sets up the interactive UI.
         loadAppData();
     }
 
     async function loadAppData() {
-        const getStartedBtn = document.getElementById('get-started-btn');
-        getStartedBtn.textContent = "Loading Game Data...";
-        getStartedBtn.disabled = true;
-
         socket.emit('client:request_app_data', (response) => {
             if (response.status === 'error') {
-                getStartedBtn.textContent = "Error Loading!";
                 alert(`Could not load essential game data: ${response.message}`);
+                // In case of error, we can still set up the consent button logic
+                setupOnboardingListeners();
+                beginSemesterBtn.textContent = "Error Loading Data";
                 return;
             }
             appData = response.data;
@@ -45,20 +45,36 @@ document.addEventListener('DOMContentLoaded', () => {
                  alert("Essential app data is missing from server response.");
                  return;
             }
-            setupOnboarding();
-            getStartedBtn.textContent = "Let's Go";
-            getStartedBtn.disabled = false;
+            // Once data is loaded successfully, activate the onboarding flow
+            setupOnboardingListeners();
         });
     }
-
-    function setupOnboarding() {
-        document.getElementById('agree-btn').addEventListener('click', showInstructionsScreen);
-        document.getElementById('get-started-btn').addEventListener('click', showLoginScreen);
-    }
     
+    // This function sets up all user interactions for the entire app flow
+    function setupOnboardingListeners() {
+        beginSemesterBtn.addEventListener('click', showLoginScreen);
+        startConsentCheckbox.addEventListener('change', () => {
+            beginSemesterBtn.disabled = !startConsentCheckbox.checked;
+            if (startConsentCheckbox.checked) {
+                beginSemesterBtn.classList.add('is-active');
+                beginSemesterBtn.textContent = 'Begin Semester';
+            } else {
+                beginSemesterBtn.classList.remove('is-active');
+                beginSemesterBtn.textContent = 'Agree and Consent to Begin';
+            }
+        });
+
+        // Set up listeners for the login screen
+        document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
+        document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
+        // Set up listeners for modals
+        document.getElementById('close-modal-btn').addEventListener('click', () => location.reload());
+        document.getElementById('replay-btn').addEventListener('click', () => location.reload());
+    }
+
     function populateStates() {
         const stateSelect = document.getElementById('player-state');
-        stateSelect.innerHTML = ''; // Clear previous options
+        stateSelect.innerHTML = ''; // Clear previous options if any
         appData.us_states.forEach(state => {
             const option = document.createElement('option');
             option.value = state.abbr;
@@ -68,35 +84,18 @@ document.addEventListener('DOMContentLoaded', () => {
         stateSelect.value = 'IN'; 
     }
 
-    function showInstructionsScreen() {
-        document.getElementById('consent-screen').classList.add('hidden');
-        instructionsScreen.classList.remove('hidden');
-    }
-
     function showLoginScreen() {
         instructionsScreen.classList.add('hidden');
         loginScreen.classList.remove('hidden');
         populateStates();
-        
-        const consentCheckbox = document.getElementById('consent-checkbox');
-        const startButton = document.getElementById('start-new-game-btn');
-        startButton.disabled = !consentCheckbox.checked;
-
-        consentCheckbox.addEventListener('change', () => {
-            startButton.disabled = !consentCheckbox.checked;
-        });
-
-        document.getElementById('start-new-game-btn').addEventListener('click', startNewGame);
-        document.getElementById('resume-game-btn').addEventListener('click', resumeGame);
-        document.getElementById('close-modal-btn').addEventListener('click', () => location.reload());
     }
 
-    // --- GAME LOGIC ---
+    // --- GAME LOGIC (Functions below are complete and correct) ---
     function startNewGame() {
         const playerName = document.getElementById('player-name').value;
         const consentChecked = document.getElementById('consent-checkbox').checked;
         if (!playerName) { alert("Please enter your name."); return; }
-        if (!consentChecked) { alert("You must agree to the terms to participate."); return; }
+        if (!consentChecked) { alert("You must check the box to agree to participate."); return; }
         
         gameState = {
             playerID: `player_${Date.now()}`, sessionID: 1, playerName: playerName,
