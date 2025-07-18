@@ -1,3 +1,4 @@
+/* (All previous CSS is the same, with the addition of the #debug-log styles) */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
 :root{--primary-bg:#121212;--secondary-bg:#1e1e1e;--tertiary-bg:#2a2a2a;--font-color:#e0e0e0;--accent-color:#4a90e2;--green-accent:#2ecc71;--red-accent:#e74c3c;--grey-accent:#7f8c8d;}
 body{font-family:'Roboto',sans-serif;background-color:#333;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;color:var(--font-color);}
@@ -58,3 +59,7 @@ body{font-family:'Roboto',sans-serif;background-color:#333;display:flex;justify-
 .final-splash h2{color:var(--red-accent);text-transform:uppercase;}
 #end-game-buttons{margin-top:20px;text-align:center;}
 .hidden{display:none !important;}
+/* New Debug Styles */
+#debug-log { position: fixed; bottom: 20px; left: 20px; background-color: rgba(0,0,0,0.8); border: 1px solid #555; padding: 10px; font-family: monospace; font-size: 12px; color: #fff; max-width: 330px; z-index: 100; border-radius: 5px; }
+#debug-log h4 { margin: 0 0 5px 0; color: var(--green-accent); }
+#debug-log div { white-space: pre-wrap; word-wrap: break-word; }
