@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- SCREEN 1: CONSENT (Starts Visible) -->
+        <div id="consent-screen" class="full-screen-view consent-view">
+            <h1>Research Consent</h1>
+            <p class="instructions-text">
+                This is a research game designed to study decision-making in social media environments. You will take on the role of a college student navigating their first semester.<br><br>
+                By clicking "I Agree" and playing the game, you consent to have your anonymized gameplay choices collected and used for academic research purposes. No personally identifiable information will be stored.
+            </p>
+            <button id="agree-btn" class="action-button">I Agree and Wish to Participate</button>
+        </div>
+
+        <!-- SCREEN 2: INSTRUCTIONS (Starts Hidden) -->
+        <div id="instructions-screen" class="full-screen-view hidden">
+            <h1>Welcome to<br>Nexus</h1> <!-- TITLE UPDATED -->
+            <p class="instructions-text">
+                Get ready to live your first semester of college on Nexus, the world's most connected social app. The vibe is simple: <span class="highlight">just be you.</span><br><br>
+                Each week, a new Life Event will pop up. Your feed, your choice—pick the post that feels right. There are no wrong answers, only your story.<br>
+            </p>
+            <div class="instruction-box">
+                <p>At key moments, a button that looks like this:</p>
+                <div class="button-example">
+                    <button class="save-progress-button" disabled>Take a Break</button>
+                </div>
+                <p>will allow you to save your progress and return later. A unique Passkey is your only ticket back, so write it down!</p>
+            </div>
+            <button id="start-semester-btn" class="action-button">Start Semester</button> <!-- BUTTON UPDATED -->
+        </div>
+        
+        <!-- SCREEN 3: LOGIN / RESUME (Starts Hidden) -->
+        <div id="login-screen" class="full-screen-view hidden">
+            <h1>Nexus</h1>
+            <div id="new-player-form">
+                <div class="form-group">
+                    <label for="player-name">Your Name</label>
+                    <input type="text" id="player-name" placeholder="e.g., Alex Chen">
+                </div>
+                <div class="form-group">
+                    <label for="player-city">Where are you from?</label>
+                    <input type="text" id="player-city" placeholder="City">
+                    <select id="player-state" style="margin-top: 5px;"></select>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; margin-top: 15px;">
+                    <input type="checkbox" id="consent-checkbox" style="width: auto; margin-right: 10px;">
+                    <label for="consent-checkbox" style="margin: 0; font-size: 12px;">I understand this is for research and I agree to participate.</label>
+                </div>
+                <button id="start-new-game-btn" class="action-button">Begin First Semester</button>
+            </div>
+            <div class="divider"></div>
+            <div id="resume-form">
+                <div class="form-group">
+                    <label for="passkey-input">Have a Passkey? Resume here.</label>
+                    <input type="text" id="passkey-input" placeholder="e.g., f9a4b8c2d1e6f0a3">
+                </div>
+                <button id="resume-game-btn" class="action-button">Resume Game</button>
+            </div>
+        </div>
+
+        <!-- MAIN GAME SCREEN (Starts Hidden) -->
+        <div id="game-screen" class="hidden">
+            <div id="top-bar"><span>9:41 AM</span></div>
+            <div id="main-screen">
+                <div id="game-content">
+                    <div id="calendar-zone">
+                        <span id="week-display"></span>
+                        <span id="date-display"></span>
+                        <span id="weather-display"></span>
+                    </div>
+                    <div class="game-section">
+                        <p class="section-title">Life Event</p>
+                        <div id="life-event-zone"></div>
+                    </div>
+                    <div class="game-section">
+                        <p class="section-title">Create a Post</p>
+                        <div id="post-options-zone"></div>
+                    </div>
+                    <div id="proceed-zone" class="hidden"></div> 
+                </div>
+                <div id="gate-zone" class="hidden"></div>
+            </div>
+            <div id="game-footer">
+                <div id="profile-strength-display">
+                    <span>👤 Profile Strength: </span>
+                    <span id="score-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODALS -->
+        <div id="save-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h3>Progress Saved!</h3>
+                <p>Use the following Passkey to resume your game later:</p>
+                <div id="passkey-display" class="passkey-display"></div>
+                <p><strong>Important:</strong> This is the only time you will see this key. Write it down!</p>
+                <button id="close-modal-btn" class="modal-button">Close and Exit</button>
+            </div>
+        </div>
+        <div id="end-game-splash" class="modal-overlay hidden">
+             <div class="modal-content final-splash"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

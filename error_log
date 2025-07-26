@@ -1,0 +1,36 @@
+[13-Jul-2025 00:49:35 America/Denver] PHP Warning:  pg_query(): Query failed: ERROR:  permission denied for relation static_data in /home1/cslohcom/public_html/nexus/get_app_data.php on line 14
+[13-Jul-2025 00:49:35 America/Denver] PHP Fatal error:  Uncaught TypeError: pg_fetch_assoc(): Argument #1 ($result) must be of type PgSql\Result, bool given in /home1/cslohcom/public_html/nexus/get_app_data.php:17
+Stack trace:
+#0 /home1/cslohcom/public_html/nexus/get_app_data.php(17): pg_fetch_assoc(false)
+#1 {main}
+  thrown in /home1/cslohcom/public_html/nexus/get_app_data.php on line 17
+[13-Jul-2025 00:49:41 America/Denver] PHP Warning:  pg_query(): Query failed: ERROR:  permission denied for relation static_data in /home1/cslohcom/public_html/nexus/get_app_data.php on line 14
+[13-Jul-2025 00:49:41 America/Denver] PHP Fatal error:  Uncaught TypeError: pg_fetch_assoc(): Argument #1 ($result) must be of type PgSql\Result, bool given in /home1/cslohcom/public_html/nexus/get_app_data.php:17
+Stack trace:
+#0 /home1/cslohcom/public_html/nexus/get_app_data.php(17): pg_fetch_assoc(false)
+#1 {main}
+  thrown in /home1/cslohcom/public_html/nexus/get_app_data.php on line 17
+[13-Jul-2025 00:49:46 America/Denver] PHP Warning:  pg_query(): Query failed: ERROR:  permission denied for relation static_data in /home1/cslohcom/public_html/nexus/get_app_data.php on line 14
+[13-Jul-2025 00:49:46 America/Denver] PHP Fatal error:  Uncaught TypeError: pg_fetch_assoc(): Argument #1 ($result) must be of type PgSql\Result, bool given in /home1/cslohcom/public_html/nexus/get_app_data.php:17
+Stack trace:
+#0 /home1/cslohcom/public_html/nexus/get_app_data.php(17): pg_fetch_assoc(false)
+#1 {main}
+  thrown in /home1/cslohcom/public_html/nexus/get_app_data.php on line 17
+[13-Jul-2025 00:50:19 America/Denver] PHP Warning:  pg_query(): Query failed: ERROR:  permission denied for relation static_data in /home1/cslohcom/public_html/nexus/get_app_data.php on line 14
+[13-Jul-2025 00:50:19 America/Denver] PHP Fatal error:  Uncaught TypeError: pg_fetch_assoc(): Argument #1 ($result) must be of type PgSql\Result, bool given in /home1/cslohcom/public_html/nexus/get_app_data.php:17
+Stack trace:
+#0 /home1/cslohcom/public_html/nexus/get_app_data.php(17): pg_fetch_assoc(false)
+#1 {main}
+  thrown in /home1/cslohcom/public_html/nexus/get_app_data.php on line 17
+[13-Jul-2025 00:52:34 America/Denver] PHP Warning:  pg_query(): Query failed: ERROR:  permission denied for relation static_data in /home1/cslohcom/public_html/nexus/get_app_data.php on line 14
+[13-Jul-2025 00:52:34 America/Denver] PHP Fatal error:  Uncaught TypeError: pg_fetch_assoc(): Argument #1 ($result) must be of type PgSql\Result, bool given in /home1/cslohcom/public_html/nexus/get_app_data.php:17
+Stack trace:
+#0 /home1/cslohcom/public_html/nexus/get_app_data.php(17): pg_fetch_assoc(false)
+#1 {main}
+  thrown in /home1/cslohcom/public_html/nexus/get_app_data.php on line 17
+[13-Jul-2025 00:52:52 America/Denver] PHP Warning:  pg_query(): Query failed: ERROR:  permission denied for relation static_data in /home1/cslohcom/public_html/nexus/get_app_data.php on line 14
+[13-Jul-2025 00:52:52 America/Denver] PHP Fatal error:  Uncaught TypeError: pg_fetch_assoc(): Argument #1 ($result) must be of type PgSql\Result, bool given in /home1/cslohcom/public_html/nexus/get_app_data.php:17
+Stack trace:
+#0 /home1/cslohcom/public_html/nexus/get_app_data.php(17): pg_fetch_assoc(false)
+#1 {main}
+  thrown in /home1/cslohcom/public_html/nexus/get_app_data.php on line 17
